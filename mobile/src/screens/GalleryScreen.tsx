@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, ActivityIndicator, TouchableOpacity, Dimensions, RefreshControl } from 'react-native';
 import { GalleryItem } from '../types';
-import api from '../services/api';
+import api, { API_URL } from '../services/api';
 
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 3;
@@ -35,15 +35,20 @@ export default function GalleryScreen() {
         fetchGallery();
     };
 
-    const renderItem = ({ item }: { item: GalleryItem }) => (
-        <TouchableOpacity style={styles.itemContainer} activeOpacity={0.8}>
-            <Image
-                source={{ uri: item.raw_url }}
-                style={styles.image}
-                resizeMode="cover"
-            />
-        </TouchableOpacity>
-    );
+    const renderItem = ({ item }: { item: GalleryItem }) => {
+        // Fix localhost routing on actual mobile devices
+        const mobileFriendlyUrl = item.raw_url.replace('http://localhost:3000', API_URL);
+
+        return (
+            <TouchableOpacity style={styles.itemContainer} activeOpacity={0.8}>
+                <Image
+                    source={{ uri: mobileFriendlyUrl }}
+                    style={styles.image}
+                    resizeMode="cover"
+                />
+            </TouchableOpacity>
+        );
+    };
 
     if (loading) {
         return (
