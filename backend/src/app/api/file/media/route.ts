@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getGitHubAccount } from '@/lib/auth';
-import jwt from 'jsonwebtoken';
 
 export async function GET(request: NextRequest) {
     try {
@@ -28,7 +27,7 @@ export async function GET(request: NextRequest) {
         const githubAccount = await getGitHubAccount(userId);
 
         if (!githubAccount) {
-            return new NextResponse('GitHub account not connected', 400);
+            return new NextResponse('GitHub account not connected', { status: 400 });
         }
 
         const { data: file } = await supabaseAdmin
@@ -39,7 +38,7 @@ export async function GET(request: NextRequest) {
             .single();
 
         if (!file) {
-            return new NextResponse('File not found', 404);
+            return new NextResponse('File not found', { status: 404 });
         }
 
         const rawUrl = `https://raw.githubusercontent.com/${githubAccount.github_username}/${githubAccount.repo_name}/main/${file.github_path}`;
