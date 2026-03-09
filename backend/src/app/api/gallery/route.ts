@@ -49,10 +49,13 @@ export async function GET(request: NextRequest) {
             return errorResponse('Failed to fetch gallery', 500);
         }
 
-        // Build raw URLs for each file
+        const token = request.headers.get('authorization')?.replace('Bearer ', '');
+        const origin = request.nextUrl.origin;
+
+        // Build proxy URLs for each file to securely access them
         const galleryItems = (data || []).map(file => ({
             ...file,
-            raw_url: `https://raw.githubusercontent.com/${githubAccount.github_username}/${githubAccount.repo_name}/main/${file.github_path}`,
+            raw_url: `${origin}/api/file/media?id=${file.id}&token=${token}`,
         }));
 
         return successResponse({
