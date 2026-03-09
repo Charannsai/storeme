@@ -84,12 +84,15 @@ export async function POST(request: NextRequest) {
                 .update({ status: 'synced' })
                 .eq('id', mediaFile.id);
 
+            const token = request.headers.get('authorization')?.replace('Bearer ', '');
+            const origin = request.nextUrl.origin;
+
             return successResponse({
                 id: mediaFile.id,
                 filename,
                 github_path: githubPath,
                 status: 'synced',
-                raw_url: `https://raw.githubusercontent.com/${githubAccount.github_username}/${githubAccount.repo_name}/main/${githubPath}`,
+                raw_url: `${origin}/api/file/media?id=${mediaFile.id}&token=${token}`,
             }, 201);
         } catch (uploadError: any) {
             // Mark as failed
