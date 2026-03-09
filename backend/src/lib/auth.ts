@@ -16,19 +16,15 @@ export async function getAuthenticatedUser(request: NextRequest) {
     const token = authHeader.replace('Bearer ', '');
 
     try {
-        const decoded = jwt.verify(
-            token,
-            process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET || ''
-        ) as any;
+        const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
 
-        // Fetch user from DB using the subjective claims ID
-        if (decoded && decoded.sub) {
-            const { data: user } = await supabaseAdmin.auth.admin.getUserById(decoded.sub);
-            return user?.user || null;
+        if (error || !user) {
+            return null;
         }
-        return null;
+
+        return user;
     } catch {
-        return null; // Invalid token
+        return null;
     }
 }
 

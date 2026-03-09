@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UploadQueueItem } from '../types';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImageManipulator from 'expo-image-manipulator';
 import api from './api';
 
@@ -85,7 +85,7 @@ export async function processQueue() {
 
             // Read file as base64
             const base64 = await FileSystem.readAsStringAsync(finalUri, {
-                encoding: FileSystem.EncodingType.Base64,
+                encoding: 'base64',
             });
 
             // Generate names
