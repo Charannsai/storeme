@@ -60,57 +60,63 @@ export async function updateQueueItemStatus(id: string, status: UploadQueueItem[
  */
 export async function processQueue() {
     const queue = await getQueue();
-    // Find up to 5 pending or failed items
+    // Gather up to 5 pending items per batch sync
     const pendingItems = queue
         .filter(i => i.status === 'pending' || i.status === 'failed')
         .slice(0, 5);
 
     if (pendingItems.length === 0) return;
 
+    const payloadFields = [];
+
+    // Process files locally first
     for (const item of pendingItems) {
+        await updateQueueItemStatus(item.id, 'uploading');
+
         try {
-            await updateQueueItemStatus(item.id, 'uploading');
-
-            let finalUri = item.uri;
-
-            // Compress images before upload
-            if (item.type === 'image') {
-                const manipResult = await ImageManipulator.manipulateAsync(
-                    item.uri,
-                    [{ resize: { width: 1920 } }], // Resize down max width
-                    { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
-                );
-                finalUri = manipResult.uri;
-            }
-
-            // Read file as base64
-            const base64 = await FileSystem.readAsStringAsync(finalUri, {
+            // WE NOW UPLOAD THE ORIGINAL, FULL QUALITY RAW FILES BYPASSING IMAGE COMPRESSION
+            const base64 = await FileSystem.readAsStringAsync(item.uri, {
                 encoding: 'base64',
             });
 
-            // Generate names
             const timestamp = Date.now();
             const hashString = Math.random().toString(36).substring(2, 8);
             const ext = item.filename.split('.').pop() || 'jpg';
             const newFilename = `${timestamp}_${hashString}.${ext}`;
 
-            // Upload via API
-            await api.post('/api/files', {
+            payloadFields.push({
+                originalId: item.id,
                 filename: newFilename,
                 file_type: item.type,
                 size: item.size,
                 content: base64,
                 hash: `${timestamp}_${hashString}`,
             });
+        } catch (err: any) {
+            console.error(`Error reading file ${item.id}:`, err);
+            await updateQueueItemStatus(item.id, 'failed', err.message);
+        }
+    }
+
+    if (payloadFields.length > 0) {
+        try {
+            // Upload the batch array directly to the new Next.js endpoint
+            await api.post('/api/files/batch', {
+                files: payloadFields,
+            });
 
             // Mark completed & clean up
-            await updateQueueItemStatus(item.id, 'completed');
-            await removeFromQueue(item.id);
+            for (const file of payloadFields) {
+                await updateQueueItemStatus(file.originalId, 'completed');
+                await removeFromQueue(file.originalId);
+            }
         } catch (err: any) {
-            // Mark as failed
+            // If the batch network request fails, mark all grouped items as failed natively
             let errorMsg = err?.response?.data?.error || err.message;
-            console.error(`Error processing queue item ${item.id}:`, errorMsg);
-            await updateQueueItemStatus(item.id, 'failed', errorMsg);
+            console.error('Batch upload error:', errorMsg);
+            for (const file of payloadFields) {
+                await updateQueueItemStatus(file.originalId, 'failed', errorMsg);
+            }
         }
     }
 }

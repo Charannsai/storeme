@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator,
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Feather } from '@expo/vector-icons';
 import api from '../services/api';
 
 type Props = {
@@ -55,7 +56,9 @@ export default function AuthScreen({ navigation }: Props) {
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.content}>
                     <View style={styles.logoContainer}>
-                        <Text style={styles.logoIcon}>📦</Text>
+                        <View style={styles.iconCircle}>
+                            <Feather name="cloud" size={32} color="#0F172A" />
+                        </View>
                         <Text style={styles.logoText}>StoreMe</Text>
                     </View>
 
@@ -73,7 +76,7 @@ export default function AuthScreen({ navigation }: Props) {
                     <TextInput
                         style={styles.input}
                         placeholder="Email"
-                        placeholderTextColor="#8b8ba3"
+                        placeholderTextColor="#9CA3AF"
                         value={email}
                         onChangeText={setEmail}
                         autoCapitalize="none"
@@ -83,7 +86,7 @@ export default function AuthScreen({ navigation }: Props) {
                     <TextInput
                         style={styles.input}
                         placeholder="Password"
-                        placeholderTextColor="#8b8ba3"
+                        placeholderTextColor="#9CA3AF"
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry
@@ -95,7 +98,7 @@ export default function AuthScreen({ navigation }: Props) {
                         disabled={loading}
                     >
                         {loading ? (
-                            <ActivityIndicator color="#fff" />
+                            <ActivityIndicator color="#FFFFFF" />
                         ) : (
                             <Text style={styles.buttonText}>
                                 {isLogin ? 'Sign In' : 'Create Account'}
@@ -120,7 +123,7 @@ export default function AuthScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0a0a0f',
+        backgroundColor: '#FFFFFF',
     },
     scrollContent: {
         flexGrow: 1,
@@ -136,60 +139,68 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 40,
     },
-    logoIcon: {
-        fontSize: 48,
+    iconCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
         marginBottom: 16,
     },
     logoText: {
         fontSize: 28,
         fontWeight: '800',
-        color: '#f0f0f5',
+        color: '#0F172A',
+        letterSpacing: -0.5,
     },
     title: {
         fontSize: 24,
         fontWeight: '700',
-        color: '#f0f0f5',
+        color: '#111827',
         marginBottom: 8,
         textAlign: 'center',
+        letterSpacing: -0.5,
     },
     subtitle: {
-        fontSize: 14,
-        color: '#8b8ba3',
+        fontSize: 15,
+        color: '#6B7280',
         marginBottom: 32,
         textAlign: 'center',
     },
     errorContainer: {
-        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+        backgroundColor: '#FEF2F2',
         padding: 12,
-        borderRadius: 8,
+        borderRadius: 12,
         marginBottom: 20,
         borderWidth: 1,
-        borderColor: 'rgba(239, 68, 68, 0.3)',
+        borderColor: '#FCA5A5',
     },
     errorText: {
-        color: '#ef4444',
+        color: '#EF4444',
         fontSize: 14,
         textAlign: 'center',
+        fontWeight: '500',
     },
     input: {
-        backgroundColor: '#1a1a2e',
+        backgroundColor: '#F9FAFB',
         borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.08)',
+        borderColor: '#E5E7EB',
         borderRadius: 12,
         padding: 16,
-        color: '#f0f0f5',
+        color: '#111827',
         fontSize: 16,
         marginBottom: 16,
     },
     button: {
-        backgroundColor: '#8b5cf6',
+        backgroundColor: '#0F172A',
         borderRadius: 12,
         padding: 16,
         alignItems: 'center',
         marginTop: 8,
     },
     buttonText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '600',
     },
@@ -198,7 +209,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     toggleText: {
-        color: '#a78bfa',
+        color: '#4B5563',
         fontSize: 14,
         fontWeight: '500',
     },

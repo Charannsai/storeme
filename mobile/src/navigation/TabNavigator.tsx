@@ -1,7 +1,7 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DashboardTabParamList } from '../types';
+import { Feather } from '@expo/vector-icons';
 
 import GalleryScreen from '../screens/GalleryScreen';
 import UploadScreen from '../screens/UploadScreen';
@@ -15,21 +15,21 @@ export default function TabNavigator() {
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: '#12121a',
-                    borderTopColor: 'rgba(255,255,255,0.08)',
+                    backgroundColor: '#FFFFFF',
+                    borderTopColor: '#E5E7EB',
                     height: 60,
-                    paddingBottom: 8,
                     paddingTop: 8,
+                    paddingBottom: 8,
                 },
-                tabBarActiveTintColor: '#8b5cf6',
-                tabBarInactiveTintColor: '#8b8ba3',
+                tabBarActiveTintColor: '#0F172A',
+                tabBarInactiveTintColor: '#9CA3AF',
                 tabBarIcon: ({ color, size }) => {
-                    let icon = '';
-                    if (route.name === 'Gallery') icon = '🖼️';
-                    else if (route.name === 'Upload') icon = '➕';
-                    else if (route.name === 'Settings') icon = '⚙️';
+                    let iconName: any = 'square';
+                    if (route.name === 'Gallery') iconName = 'image';
+                    else if (route.name === 'Upload') iconName = 'upload-cloud';
+                    else if (route.name === 'Settings') iconName = 'settings';
 
-                    return <Text style={{ fontSize: 20 }}>{icon}</Text>;
+                    return <Feather name={iconName} size={24} color={color} />;
                 },
             })}
         >

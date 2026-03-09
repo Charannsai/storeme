@@ -24,14 +24,14 @@ export interface UploadQueueItem {
     created_at: number;
 }
 
-export interface RootStackParamList {
+export type RootStackParamList = {
     Auth: undefined;
     ConnectGitHub: undefined;
     Dashboard: undefined; // Tab Navigator
-}
+};
 
-export interface DashboardTabParamList {
+export type DashboardTabParamList = {
     Gallery: undefined;
     Upload: undefined;
     Settings: undefined;
-}
+};

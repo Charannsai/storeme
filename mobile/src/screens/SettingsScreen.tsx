@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DashboardTabParamList } from '../types';
+import { Feather } from '@expo/vector-icons';
 import api from '../services/api';
 
 type Props = {
@@ -53,9 +54,6 @@ export default function SettingsScreen({ navigation }: Props) {
                             await AsyncStorage.removeItem('refresh_token');
                             await AsyncStorage.removeItem('user');
 
-                            // We need to direct to auth, but since we are nested in tabs, we trigger a reset from App root
-                            // Realistically we use a Context or a root nav access
-                            // But for expo we'll just force restart logic or pass to parent nav
                             (navigation.getParent() as any)?.replace('Auth');
                         }
                     },
@@ -69,7 +67,7 @@ export default function SettingsScreen({ navigation }: Props) {
     if (loading) {
         return (
             <View style={[styles.container, styles.centered]}>
-                <ActivityIndicator size="large" color="#8b5cf6" />
+                <ActivityIndicator size="large" color="#0F172A" />
             </View>
         );
     }
@@ -109,15 +107,18 @@ export default function SettingsScreen({ navigation }: Props) {
 
                     <View style={styles.statsGrid}>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statValue, { color: '#f0f0f5' }]}>{stats?.file_count || 0}</Text>
+                            <Feather name="file" size={20} color="#6B7280" style={{ marginBottom: 4 }} />
+                            <Text style={styles.statValue}>{stats?.file_count || 0}</Text>
                             <Text style={styles.statLabel}>Files</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statValue, { color: '#10b981' }]}>{stats?.image_count || 0}</Text>
+                            <Feather name="image" size={20} color="#10B981" style={{ marginBottom: 4 }} />
+                            <Text style={[styles.statValue, { color: '#10B981' }]}>{stats?.image_count || 0}</Text>
                             <Text style={styles.statLabel}>Photos</Text>
                         </View>
                         <View style={styles.statItem}>
-                            <Text style={[styles.statValue, { color: '#f59e0b' }]}>{stats?.video_count || 0}</Text>
+                            <Feather name="video" size={20} color="#F59E0B" style={{ marginBottom: 4 }} />
+                            <Text style={[styles.statValue, { color: '#F59E0B' }]}>{stats?.video_count || 0}</Text>
                             <Text style={styles.statLabel}>Videos</Text>
                         </View>
                     </View>
@@ -126,6 +127,7 @@ export default function SettingsScreen({ navigation }: Props) {
 
             <View style={[styles.section, { marginTop: 40 }]}>
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                    <Feather name="log-out" size={18} color="#EF4444" style={{ marginRight: 8 }} />
                     <Text style={styles.logoutText}>Log Out</Text>
                 </TouchableOpacity>
                 <Text style={styles.logoutHint}>
@@ -139,7 +141,7 @@ export default function SettingsScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0a0a0f',
+        backgroundColor: '#F9FAFB',
     },
     centered: {
         justifyContent: 'center',
@@ -150,59 +152,67 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingTop: 60,
-        paddingBottom: 20,
+        paddingBottom: 16,
         paddingHorizontal: 20,
-        backgroundColor: '#12121a',
+        backgroundColor: '#FFFFFF',
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.08)',
+        borderBottomColor: '#E5E7EB',
         marginBottom: 24,
     },
     headerTitle: {
         fontSize: 28,
         fontWeight: '800',
-        color: '#f0f0f5',
+        color: '#0F172A',
+        letterSpacing: -0.5,
     },
     section: {
         paddingHorizontal: 20,
         marginBottom: 24,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#8b8ba3',
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#6B7280',
         marginBottom: 12,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
     card: {
-        backgroundColor: '#1a1a2e',
+        backgroundColor: '#FFFFFF',
         borderRadius: 16,
         padding: 20,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: '#E5E7EB',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
     },
     avatar: {
         width: 56,
         height: 56,
-        borderRadius: 16,
-        backgroundColor: '#8b5cf6',
+        borderRadius: 28,
+        backgroundColor: '#F1F5F9',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 16,
     },
     avatarText: {
         fontSize: 24,
-        fontWeight: '800',
-        color: '#fff',
+        fontWeight: '700',
+        color: '#0F172A',
     },
     userInfo: {},
     userEmail: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#f0f0f5',
+        color: '#111827',
         marginBottom: 4,
     },
     userId: {
         fontSize: 13,
-        color: '#8b8ba3',
+        color: '#6B7280',
     },
     statsHeader: {
         flexDirection: 'row',
@@ -211,59 +221,71 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     statsSize: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: '800',
-        color: '#f0f0f5',
+        color: '#111827',
+        letterSpacing: -0.5,
     },
     statsLimit: {
         fontSize: 13,
-        color: '#8b8ba3',
+        color: '#6B7280',
+        fontWeight: '500',
     },
     progressBar: {
         height: 8,
-        backgroundColor: '#12121a',
+        backgroundColor: '#F3F4F6',
         borderRadius: 4,
-        marginBottom: 20,
+        marginBottom: 24,
         overflow: 'hidden',
     },
     progressFill: {
         height: '100%',
-        backgroundColor: '#8b5cf6',
+        backgroundColor: '#0F172A',
         borderRadius: 4,
     },
     statsGrid: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#F3F4F6',
+        marginTop: 8,
     },
     statItem: {
         alignItems: 'center',
+        flex: 1,
     },
     statValue: {
-        fontSize: 24,
-        fontWeight: '800',
+        fontSize: 20,
+        fontWeight: '700',
         marginBottom: 4,
+        color: '#111827',
     },
     statLabel: {
         fontSize: 13,
-        color: '#8b8ba3',
+        color: '#6B7280',
+        fontWeight: '500',
     },
     logoutButton: {
-        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+        backgroundColor: '#FEF2F2',
         borderWidth: 1,
-        borderColor: 'rgba(239, 68, 68, 0.3)',
+        borderColor: '#FCA5A5',
         borderRadius: 12,
         padding: 16,
         alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'row',
         marginBottom: 12,
     },
     logoutText: {
-        color: '#ef4444',
+        color: '#EF4444',
         fontSize: 16,
-        fontWeight: '700',
+        fontWeight: '600',
     },
     logoutHint: {
         fontSize: 13,
-        color: '#8b8ba3',
+        color: '#9CA3AF',
         textAlign: 'center',
+        lineHeight: 20,
     },
 });

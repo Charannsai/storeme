@@ -67,6 +67,89 @@ export async function uploadFileToGitHub(
 }
 
 /**
+ * Upload multiple files to GitHub in a single commit using the Git Data API.
+ * This is vastly more efficient for rate limits and repo history.
+ */
+export async function uploadFilesBatchToGitHub(
+    accessToken: string,
+    owner: string,
+    repo: string,
+    files: Array<{ path: string; content: string }>, // content is Base64 encoded
+    message: string = 'Batch upload media files'
+) {
+    const octokit = createGitHubClient(accessToken);
+
+    // 1. Get current branch reference
+    const { data: refData } = await octokit.rest.git.getRef({
+        owner,
+        repo,
+        ref: 'heads/main',
+    }).catch(async () => {
+        // Fallback to master if main doesn't exist
+        return octokit.rest.git.getRef({
+            owner,
+            repo,
+            ref: 'heads/master',
+        });
+    });
+
+    const currentCommitSha = refData.object.sha;
+
+    // 2. Get the commit to get its base tree
+    const { data: commitData } = await octokit.rest.git.getCommit({
+        owner,
+        repo,
+        commit_sha: currentCommitSha,
+    });
+
+    // 3. Create a tree with the new files
+    // The content is passed directly, Octokit handles it if we specify encoding or pass blobs
+    // For base64 files, we strictly MUST create blobs FIRST.
+    const treeEntries = await Promise.all(
+        files.map(async (file) => {
+            const { data: blobData } = await octokit.rest.git.createBlob({
+                owner,
+                repo,
+                content: file.content,
+                encoding: 'base64',
+            });
+            return {
+                path: file.path,
+                mode: '100644' as const,
+                type: 'blob' as const,
+                sha: blobData.sha,
+            };
+        })
+    );
+
+    const { data: treeData } = await octokit.rest.git.createTree({
+        owner,
+        repo,
+        base_tree: commitData.tree.sha,
+        tree: treeEntries,
+    });
+
+    // 4. Create the formal commit
+    const { data: newCommitData } = await octokit.rest.git.createCommit({
+        owner,
+        repo,
+        message,
+        tree: treeData.sha,
+        parents: [currentCommitSha],
+    });
+
+    // 5. Point the branch pointer to the new commit
+    await octokit.rest.git.updateRef({
+        owner,
+        repo,
+        ref: refData.ref.replace('refs/', ''),
+        sha: newCommitData.sha,
+    });
+
+    return newCommitData;
+}
+
+/**
  * Delete a file from the user's GitHub repo.
  */
 export async function deleteFileFromGitHub(

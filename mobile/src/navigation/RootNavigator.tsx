@@ -34,8 +34,8 @@ export default function RootNavigator() {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#0a0a0f', justifyContent: 'center', alignItems: 'center' }}>
-                <ActivityIndicator size="large" color="#8b5cf6" />
+            <View style={{ flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#0F172A" />
             </View>
         );
     }
@@ -46,7 +46,7 @@ export default function RootNavigator() {
                 initialRouteName={initialRoute}
                 screenOptions={{
                     headerShown: false,
-                    contentStyle: { backgroundColor: '#0a0a0f' },
+                    contentStyle: { backgroundColor: '#FFFFFF' },
                 }}
             >
                 <Stack.Screen name="Auth" component={AuthScreen} />

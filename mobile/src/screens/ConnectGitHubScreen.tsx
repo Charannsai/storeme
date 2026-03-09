@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
+import { Feather } from '@expo/vector-icons';
 import api from '../services/api';
 
 type Props = {
@@ -40,7 +41,7 @@ export default function ConnectGitHubScreen({ navigation }: Props) {
     if (loading) {
         return (
             <View style={[styles.container, styles.centered]}>
-                <ActivityIndicator size="large" color="#8b5cf6" />
+                <ActivityIndicator size="large" color="#0F172A" />
             </View>
         );
     }
@@ -48,10 +49,12 @@ export default function ConnectGitHubScreen({ navigation }: Props) {
     return (
         <View style={styles.container}>
             <View style={styles.content}>
-                <Text style={styles.icon}>🔗</Text>
+                <View style={styles.iconCircle}>
+                    <Feather name="github" size={32} color="#0F172A" />
+                </View>
                 <Text style={styles.title}>Connect GitHub</Text>
                 <Text style={styles.subtitle}>
-                    Your files are stored in your own private GitHub repository.
+                    Your files are stored securely in your own private GitHub repository.
                 </Text>
 
                 {!!error && (
@@ -82,7 +85,7 @@ export default function ConnectGitHubScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0a0a0f',
+        backgroundColor: '#FFFFFF',
     },
     centered: {
         justifyContent: 'center',
@@ -94,38 +97,47 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 24,
     },
-    icon: {
-        fontSize: 64,
+    iconCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
         marginBottom: 24,
     },
     title: {
         fontSize: 28,
         fontWeight: '800',
-        color: '#f0f0f5',
+        color: '#0F172A',
         marginBottom: 12,
+        letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 16,
-        color: '#8b8ba3',
+        color: '#6B7280',
         textAlign: 'center',
         marginBottom: 40,
         lineHeight: 24,
     },
     errorContainer: {
-        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+        backgroundColor: '#FEF2F2',
         padding: 16,
         borderRadius: 12,
         marginBottom: 24,
         width: '100%',
+        borderWidth: 1,
+        borderColor: '#FCA5A5',
     },
     errorText: {
-        color: '#ef4444',
+        color: '#EF4444',
         fontSize: 14,
         textAlign: 'center',
         lineHeight: 20,
+        fontWeight: '500',
     },
     button: {
-        backgroundColor: '#8b5cf6',
+        backgroundColor: '#0F172A',
         borderRadius: 12,
         paddingVertical: 16,
         paddingHorizontal: 32,
@@ -133,7 +145,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     buttonText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 16,
         fontWeight: '600',
     },
@@ -142,7 +154,7 @@ const styles = StyleSheet.create({
         padding: 12,
     },
     refreshText: {
-        color: '#a78bfa',
+        color: '#4B5563',
         fontSize: 14,
         fontWeight: '500',
     },
