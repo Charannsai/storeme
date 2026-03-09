@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (insertError) {
-            return errorResponse('Failed to save file metadata', 500);
+            return errorResponse(`Failed to save file metadata: ${insertError.message}`, 500);
         }
 
         try {
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
                 status: 'synced',
                 raw_url: `https://raw.githubusercontent.com/${githubAccount.github_username}/${githubAccount.repo_name}/main/${githubPath}`,
             }, 201);
-        } catch (uploadError) {
+        } catch (uploadError: any) {
             // Mark as failed
             await supabaseAdmin
                 .from('media_files')
@@ -99,10 +99,10 @@ export async function POST(request: NextRequest) {
                 .eq('id', mediaFile.id);
 
             console.error('GitHub upload error:', uploadError);
-            return errorResponse('Failed to upload file to GitHub', 500);
+            return errorResponse(`Failed to upload file to GitHub: ${uploadError?.message}`, 500);
         }
-    } catch (err) {
+    } catch (err: any) {
         console.error('File upload error:', err);
-        return errorResponse('Internal server error', 500);
+        return errorResponse(`Internal server error: ${err?.message}`, 500);
     }
 }
