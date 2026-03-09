@@ -25,7 +25,8 @@ export const api = axios.create({
 api.interceptors.request.use(async (config: any) => {
     try {
         const token = await AsyncStorage.getItem('access_token');
-        if (token && config.headers) {
+        if (token) {
+            config.headers = config.headers || {};
             config.headers.Authorization = `Bearer ${token}`;
         }
     } catch {
