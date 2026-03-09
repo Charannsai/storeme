@@ -107,9 +107,10 @@ export async function processQueue() {
             await updateQueueItemStatus(item.id, 'completed');
             await removeFromQueue(item.id);
         } catch (err: any) {
-            console.error(`Error processing queue item ${item.id}:`, err);
             // Mark as failed
-            await updateQueueItemStatus(item.id, 'failed', err?.response?.data?.error || err.message);
+            let errorMsg = err?.response?.data?.error || err.message;
+            console.error(`Error processing queue item ${item.id}:`, errorMsg);
+            await updateQueueItemStatus(item.id, 'failed', errorMsg);
         }
     }
 }
