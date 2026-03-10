@@ -216,3 +216,109 @@ export async function getGitHubUser(accessToken: string) {
         name: data.name,
     };
 }
+
+/**
+ * Move a file within the GitHub repo (get content → create at new path → delete old).
+ */
+export async function moveFileInGitHub(
+    accessToken: string,
+    owner: string,
+    repo: string,
+    oldPath: string,
+    newPath: string,
+    message: string = 'Move file'
+) {
+    const octokit = createGitHubClient(accessToken);
+
+    // 1. Get the file content and SHA
+    const { data: fileData } = await octokit.rest.repos.getContent({
+        owner, repo, path: oldPath,
+    });
+
+    if (Array.isArray(fileData) || !('content' in fileData)) {
+        throw new Error('Path is a directory or has no content');
+    }
+
+    // 2. Check if the file already exists at the new path
+    let newFileSha: string | undefined;
+    try {
+        const { data: existingData } = await octokit.rest.repos.getContent({
+            owner, repo, path: newPath,
+        });
+        if (!Array.isArray(existingData) && existingData?.sha) {
+            newFileSha = existingData.sha;
+        }
+    } catch (err: any) {
+        if (err.status !== 404) {
+            throw err;
+        }
+    }
+
+    // 3. Create file at new path (or update if it already exists)
+    await octokit.rest.repos.createOrUpdateFileContents({
+        owner, repo, path: newPath,
+        message,
+        content: fileData.content, // Already base64
+        sha: newFileSha,
+    });
+
+    // 4. Delete old file
+    await octokit.rest.repos.deleteFile({
+        owner, repo, path: oldPath,
+        message: `${message} (cleanup old path)`,
+        sha: fileData.sha,
+    });
+}
+
+/**
+ * List contents of a directory in the GitHub repo.
+ * Returns array of items with name, path, type ('file' | 'dir').
+ */
+export async function listDirectoryInGitHub(
+    accessToken: string,
+    owner: string,
+    repo: string,
+    path: string
+): Promise<Array<{ name: string; path: string; type: string }>> {
+    const octokit = createGitHubClient(accessToken);
+
+    try {
+        const { data } = await octokit.rest.repos.getContent({
+            owner, repo, path,
+        });
+
+        if (!Array.isArray(data)) {
+            return []; // Not a directory
+        }
+
+        return data.map(item => ({
+            name: item.name,
+            path: item.path,
+            type: item.type, // 'file' or 'dir'
+        }));
+    } catch (err: any) {
+        if (err.status === 404) {
+            return []; // Directory doesn't exist yet
+        }
+        throw err;
+    }
+}
+
+/**
+ * Create a directory in the GitHub repo (via .gitkeep file).
+ */
+export async function createDirectoryInGitHub(
+    accessToken: string,
+    owner: string,
+    repo: string,
+    dirPath: string
+) {
+    const octokit = createGitHubClient(accessToken);
+
+    await octokit.rest.repos.createOrUpdateFileContents({
+        owner, repo,
+        path: `${dirPath}/.gitkeep`,
+        message: `Create folder ${dirPath}`,
+        content: Buffer.from('').toString('base64'),
+    });
+}

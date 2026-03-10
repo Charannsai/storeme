@@ -1,11 +1,14 @@
 import { NextRequest } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedUser, getGitHubAccount, errorResponse, successResponse } from '@/lib/auth';
-import { deleteFileFromGitHub } from '@/lib/github';
+import { moveFileInGitHub } from '@/lib/github';
+
+const TRASH_PREFIX = '_trash/';
 
 /**
  * DELETE /api/file
- * Delete a file from GitHub and remove its metadata.
+ * Soft-delete: moves the file to _trash/ folder in GitHub repo.
+ * The file can be restored later from the trash.
  * 
  * Body: { file_id: string }
  */
@@ -18,7 +21,6 @@ export async function DELETE(request: NextRequest) {
         }
 
         const githubAccount = await getGitHubAccount(user.id);
-
         if (!githubAccount) {
             return errorResponse('GitHub account not connected', 400);
         }
@@ -41,36 +43,41 @@ export async function DELETE(request: NextRequest) {
             return errorResponse('File not found', 404);
         }
 
+        // Don't trash already-trashed files
+        if (file.github_path.startsWith(TRASH_PREFIX)) {
+            return errorResponse('File is already in trash', 400);
+        }
+
+        const trashPath = `${TRASH_PREFIX}${file.github_path}`;
+
         try {
-            // Delete from GitHub
-            await deleteFileFromGitHub(
+            // Move file to _trash/ in GitHub
+            await moveFileInGitHub(
                 githubAccount.access_token,
                 githubAccount.github_username,
                 githubAccount.repo_name,
-                file.github_path
+                file.github_path,
+                trashPath,
+                `Trash ${file.filename}`
             );
-        } catch (githubError) {
-            console.error('GitHub delete error:', githubError);
-            // Continue to delete metadata even if GitHub delete fails
+
+            // Update the github_path in Supabase
+            await supabaseAdmin
+                .from('media_files')
+                .update({ github_path: trashPath })
+                .eq('id', file_id)
+                .eq('user_id', user.id);
+
+            return successResponse({
+                message: 'File moved to trash',
+                trashed_file: file.filename,
+            });
+        } catch (moveError: any) {
+            console.error('GitHub trash move error:', moveError);
+            return errorResponse(`Failed to move file to trash: ${moveError?.message}`, 500);
         }
-
-        // Delete metadata from DB
-        const { error: deleteError } = await supabaseAdmin
-            .from('media_files')
-            .delete()
-            .eq('id', file_id)
-            .eq('user_id', user.id);
-
-        if (deleteError) {
-            return errorResponse('Failed to delete file metadata', 500);
-        }
-
-        return successResponse({
-            message: 'File deleted successfully',
-            deleted_file: file.filename,
-        });
     } catch (err) {
-        console.error('File delete error:', err);
+        console.error('File trash error:', err);
         return errorResponse('Internal server error', 500);
     }
 }

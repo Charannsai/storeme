@@ -8,6 +8,10 @@ import { RootStackParamList } from '../types';
 import AuthScreen from '../screens/AuthScreen';
 import ConnectGitHubScreen from '../screens/ConnectGitHubScreen';
 import TabNavigator from './TabNavigator';
+import ImageViewerScreen from '../screens/ImageViewerScreen';
+import ImageEditorScreen from '../screens/ImageEditorScreen';
+import FolderViewScreen from '../screens/FolderViewScreen';
+import TrashScreen from '../screens/TrashScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -52,6 +56,32 @@ export default function RootNavigator() {
                 <Stack.Screen name="Auth" component={AuthScreen} />
                 <Stack.Screen name="ConnectGitHub" component={ConnectGitHubScreen} />
                 <Stack.Screen name="Dashboard" component={TabNavigator} />
+                <Stack.Screen
+                    name="ImageViewer"
+                    component={ImageViewerScreen}
+                    options={{
+                        animation: 'fade',
+                        contentStyle: { backgroundColor: '#000' },
+                    }}
+                />
+                <Stack.Screen
+                    name="ImageEditor"
+                    component={ImageEditorScreen}
+                    options={{
+                        animation: 'slide_from_bottom',
+                        contentStyle: { backgroundColor: '#0F0F0F' },
+                    }}
+                />
+                <Stack.Screen
+                    name="FolderView"
+                    component={FolderViewScreen}
+                    options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                    name="TrashBin"
+                    component={TrashScreen}
+                    options={{ animation: 'slide_from_right' }}
+                />
             </Stack.Navigator>
         </NavigationContainer>
     );

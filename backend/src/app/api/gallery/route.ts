@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         const page = parseInt(searchParams.get('page') || '1');
         const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 100);
         const fileType = searchParams.get('type');
+        const folderName = searchParams.get('folder_name');
         const offset = (page - 1) * limit;
 
         let query = supabaseAdmin
@@ -36,11 +37,17 @@ export async function GET(request: NextRequest) {
             .select('id, filename, file_type, size, github_path, uploaded_at, hash, status', { count: 'exact' })
             .eq('user_id', user.id)
             .eq('status', 'synced')
+            .not('github_path', 'like', '_trash/%')
             .order('uploaded_at', { ascending: false })
             .range(offset, offset + limit - 1);
 
         if (fileType && (fileType === 'image' || fileType === 'video')) {
             query = query.eq('file_type', fileType);
+        }
+
+        if (folderName) {
+            // Filter files in a specific folder
+            query = query.like('github_path', `gallery/folders/${folderName}/%`);
         }
 
         const { data, error, count } = await query;
@@ -50,7 +57,9 @@ export async function GET(request: NextRequest) {
         }
 
         const token = request.headers.get('authorization')?.replace('Bearer ', '');
-        const origin = request.nextUrl.origin;
+        const host = request.headers.get('host') || 'localhost:3000';
+        const protocol = request.headers.get('x-forwarded-proto') || 'http';
+        const origin = `${protocol}://${host}`;
 
         // Build proxy URLs for each file to securely access them
         const galleryItems = (data || []).map(file => ({

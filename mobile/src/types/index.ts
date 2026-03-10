@@ -13,6 +13,12 @@ export interface GalleryItem {
     raw_url: string;
 }
 
+export interface Folder {
+    id: string;    // Same as name (folder name is the ID)
+    name: string;
+    path: string;  // Full GitHub path
+}
+
 export interface UploadQueueItem {
     id: string;
     uri: string;
@@ -28,6 +34,10 @@ export type RootStackParamList = {
     Auth: undefined;
     ConnectGitHub: undefined;
     Dashboard: undefined; // Tab Navigator
+    ImageViewer: { items: GalleryItem[]; initialIndex: number };
+    ImageEditor: { imageUri: string; fileId: string };
+    FolderView: { folder: Folder };
+    TrashBin: undefined;
 };
 
 export type DashboardTabParamList = {

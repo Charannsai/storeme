@@ -85,7 +85,9 @@ export async function POST(request: NextRequest) {
                 .eq('id', mediaFile.id);
 
             const token = request.headers.get('authorization')?.replace('Bearer ', '');
-            const origin = request.nextUrl.origin;
+            const host = request.headers.get('host') || 'localhost:3000';
+            const protocol = request.headers.get('x-forwarded-proto') || 'http';
+            const origin = `${protocol}://${host}`;
 
             return successResponse({
                 id: mediaFile.id,
