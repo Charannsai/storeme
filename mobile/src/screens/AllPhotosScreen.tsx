@@ -63,7 +63,6 @@ export default function AllPhotosScreen() {
     const insets = useSafeAreaInsets();
 
     const [items, setItems] = useState<GalleryItem[]>([]);
-    const [folders, setFolders] = useState<Folder[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -71,20 +70,14 @@ export default function AllPhotosScreen() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const [menuVisible, setMenuVisible] = useState(false);
-    const [createFolderVisible, setCreateFolderVisible] = useState(false);
     const [moveFolderVisible, setMoveFolderVisible] = useState(false);
-    const [trashCount, setTrashCount] = useState(0);
 
     const getMobileUrl = (rawUrl: string) => rawUrl.replace('http://localhost:3000', API_URL);
 
     const fetchData = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true);
         try {
-            const [galleryRes, foldersRes, trashRes] = await Promise.all([
-                api.get('/api/gallery?limit=100'),
-                api.get('/api/folders'),
-                api.get('/api/trash')
-            ]);
+            const galleryRes = await api.get('/api/gallery?limit=100');
 
             if (galleryRes.data.success) {
                 // Pre-process URLs for expo-image wrapper
@@ -94,9 +87,6 @@ export default function AllPhotosScreen() {
                 }));
                 setItems(processedItems);
             }
-            if (foldersRes.data.success) setFolders(foldersRes.data.data.folders);
-            if (trashRes.data.success) setTrashCount(trashRes.data.data.items.length);
-
         } catch (err) {
             console.error('Fetch error:', err);
         } finally {
@@ -194,8 +184,8 @@ export default function AllPhotosScreen() {
         ]);
     };
 
-    const renderHeader = () => <View style={{ height: 16 }} />;
-
+    // Move logic
+    // renderHeader removed
     if (loading && !refreshing && items.length === 0) {
         return (
             <View style={[styles.container, styles.centered]}>
@@ -234,7 +224,7 @@ export default function AllPhotosScreen() {
                 )}
             </View>
 
-            {items.length === 0 && folders.length === 0 ? (
+            {items.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <View style={styles.emptyIconCircle}>
                         <Feather name="image" size={32} color="#94A3B8" />
@@ -247,10 +237,7 @@ export default function AllPhotosScreen() {
                     data={items}
                     keyExtractor={item => item.id}
                     numColumns={COLUMN_COUNT}
-                    ListHeaderComponent={renderHeader}
-                    columnWrapperStyle={styles.row}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />}
-                    contentContainerStyle={{ paddingBottom: 120 }} // Space for fab/tab
+                    contentContainerStyle={{ paddingBottom: 120, paddingTop: 16 }} // Space for fab/tab
                     initialNumToRender={15}
                     maxToRenderPerBatch={10}
                     windowSize={5}
@@ -306,21 +293,9 @@ export default function AllPhotosScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Move to...</Text>
-                        {folders.length === 0 ? (
-                            <Text style={styles.noFolderText}>No folders available.</Text>
-                        ) : (
-                            <FlatList
-                                data={folders}
-                                keyExtractor={item => item.id}
-                                style={{ maxHeight: 250, marginVertical: 10 }}
-                                renderItem={({ item }) => (
-                                    <TouchableOpacity style={styles.folderOption} onPress={() => handleBulkMove(item.name)}>
-                                        <Feather name="folder" size={20} color="#3B82F6" />
-                                        <Text style={styles.folderOptionText}>{item.name}</Text>
-                                    </TouchableOpacity>
-                                )}
-                            />
-                        )}
+                        {/* Simplified since we don't have folders array loaded here natively, 
+                            Move operation from All Photos is currently hidden or needs a different fetch */}
+                        <Text style={styles.noFolderText}>Move supported from Albums folder list instead.</Text>
                         <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setMoveFolderVisible(false)}>
                             <Text style={styles.modalBtnCancelText}>Close</Text>
                         </TouchableOpacity>
