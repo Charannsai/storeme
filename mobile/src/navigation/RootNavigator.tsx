@@ -12,6 +12,9 @@ import ImageViewerScreen from '../screens/ImageViewerScreen';
 import ImageEditorScreen from '../screens/ImageEditorScreen';
 import FolderViewScreen from '../screens/FolderViewScreen';
 import TrashScreen from '../screens/TrashScreen';
+import AlbumsScreen from '../screens/AlbumsScreen';
+import AllPhotosScreen from '../screens/AllPhotosScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -81,6 +84,16 @@ export default function RootNavigator() {
                     name="TrashBin"
                     component={TrashScreen}
                     options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                    name="AllPhotos"
+                    component={AllPhotosScreen}
+                    options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                    name="Settings"
+                    component={SettingsScreen}
+                    options={{ animation: 'slide_from_bottom' }}
                 />
             </Stack.Navigator>
         </NavigationContainer>

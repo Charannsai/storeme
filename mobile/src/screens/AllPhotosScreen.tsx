@@ -58,7 +58,7 @@ const GalleryGridItem = React.memo(({ item, index, isSelected, selectMode, onSel
         prev.item.id === next.item.id;
 });
 
-export default function GalleryScreen() {
+export default function AllPhotosScreen() {
     const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
 
@@ -71,16 +71,19 @@ export default function GalleryScreen() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     const [menuVisible, setMenuVisible] = useState(false);
+    const [createFolderVisible, setCreateFolderVisible] = useState(false);
     const [moveFolderVisible, setMoveFolderVisible] = useState(false);
+    const [trashCount, setTrashCount] = useState(0);
 
     const getMobileUrl = (rawUrl: string) => rawUrl.replace('http://localhost:3000', API_URL);
 
     const fetchData = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true);
         try {
-            const [galleryRes, foldersRes] = await Promise.all([
+            const [galleryRes, foldersRes, trashRes] = await Promise.all([
                 api.get('/api/gallery?limit=100'),
-                api.get('/api/folders')
+                api.get('/api/folders'),
+                api.get('/api/trash')
             ]);
 
             if (galleryRes.data.success) {
@@ -92,6 +95,7 @@ export default function GalleryScreen() {
                 setItems(processedItems);
             }
             if (foldersRes.data.success) setFolders(foldersRes.data.data.folders);
+            if (trashRes.data.success) setTrashCount(trashRes.data.data.items.length);
 
         } catch (err) {
             console.error('Fetch error:', err);
@@ -170,13 +174,27 @@ export default function GalleryScreen() {
         }
     };
 
-    const renderHeader = () => (
-        <View style={styles.listHeader}>
-            {items.length > 0 && !selectMode && (
-                <Text style={[styles.sectionTitle, { marginLeft: 16, marginBottom: 8 }]}>Recent Photos</Text>
-            )}
-        </View>
-    );
+    // Empty handleCreateFolder removed over here
+
+    const handleDeleteFolder = (folder: Folder) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        Alert.alert('Delete Folder', `Delete "${folder.name}"? Files inside will be moved back to gallery.`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Delete', style: 'destructive',
+                onPress: async () => {
+                    try {
+                        await api.request({ method: 'DELETE', url: '/api/folders', data: { name: folder.name } });
+                        fetchData();
+                    } catch (err: any) {
+                        Alert.alert('Error', 'Failed to delete folder');
+                    }
+                }
+            }
+        ]);
+    };
+
+    const renderHeader = () => <View style={{ height: 16 }} />;
 
     if (loading && !refreshing && items.length === 0) {
         return (
@@ -202,8 +220,14 @@ export default function GalleryScreen() {
                     </View>
                 ) : (
                     <View style={styles.normalHeader}>
-                        <Text style={styles.headerTitle}>Recent</Text>
-                        <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setMenuVisible(true); }} style={styles.iconBtn}>
+                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
+                            <Feather name="arrow-left" size={24} color="#1E293B" />
+                        </TouchableOpacity>
+                        <View style={styles.headerTitleContainer}>
+                            <Text style={styles.headerSubtitle}>ALBUMS</Text>
+                            <Text style={styles.headerTitle} numberOfLines={1}>All Photos</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => { setMenuVisible(true); }} style={styles.iconBtn}>
                             <Feather name="more-horizontal" size={24} color="#1E293B" />
                         </TouchableOpacity>
                     </View>
@@ -216,7 +240,7 @@ export default function GalleryScreen() {
                         <Feather name="image" size={32} color="#94A3B8" />
                     </View>
                     <Text style={styles.emptyTitle}>Your gallery is empty</Text>
-                    <Text style={styles.emptySubtitle}>Upload photos from Settings to get started.</Text>
+                    <Text style={styles.emptySubtitle}>Upload photos from the '+' tab to get started.</Text>
                 </View>
             ) : (
                 <FlatList
@@ -271,13 +295,11 @@ export default function GalleryScreen() {
                             <Feather name="check-circle" size={18} color="#1E293B" />
                             <Text style={styles.menuItemText}>Select Multiple</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); navigation.navigate('Settings'); }}>
-                            <Feather name="settings" size={18} color="#1E293B" />
-                            <Text style={styles.menuItemText}>Settings</Text>
-                        </TouchableOpacity>
                     </View>
                 </TouchableOpacity>
             </Modal>
+
+            {/* Only the Move modal inside AllPhotosScreen */}
 
             {/* Move Modal */}
             <Modal visible={moveFolderVisible} transparent animationType="fade" onRequestClose={() => setMoveFolderVisible(false)}>
@@ -319,7 +341,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#FAFAFA',
     },
     normalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    headerTitle: { fontSize: 32, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
+    headerTitleContainer: { flex: 1, alignItems: 'center', paddingHorizontal: 16 },
+    headerSubtitle: { fontSize: 11, fontWeight: '700', color: '#94A3B8', letterSpacing: 1, marginBottom: 2 },
+    headerTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', textAlign: 'center' },
     iconBtn: { padding: 8, backgroundColor: '#F1F5F9', borderRadius: 20 },
 
     selectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 40 },

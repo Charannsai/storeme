@@ -38,10 +38,11 @@ export type RootStackParamList = {
     ImageEditor: { imageUri: string; fileId: string };
     FolderView: { folder: Folder };
     TrashBin: undefined;
+    AllPhotos: undefined;
+    Settings: undefined;
 };
 
 export type DashboardTabParamList = {
-    Gallery: undefined;
-    Upload: undefined;
-    Settings: undefined;
+    Photos: undefined; // Previously Gallery
+    Albums: undefined; // New
 };

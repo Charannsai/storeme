@@ -6,8 +6,7 @@ import { Feather } from '@expo/vector-icons';
 
 import { DashboardTabParamList } from '../types';
 import GalleryScreen from '../screens/GalleryScreen';
-import UploadScreen from '../screens/UploadScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import AlbumsScreen from '../screens/AlbumsScreen';
 
 const Tab = createBottomTabNavigator<DashboardTabParamList>();
 
@@ -27,20 +26,19 @@ export default function TabNavigator() {
                 tabBarBackground: () => (
                     Platform.OS === 'ios' ? (
                         <BlurView tint="light" intensity={80} style={StyleSheet.absoluteFill} />
-                    ) : null // Android uses fallback background color in tabBarStyle above
+                    ) : null
                 ),
                 tabBarActiveTintColor: '#3B82F6',
                 tabBarInactiveTintColor: '#94A3B8',
                 tabBarIcon: ({ focused, color }) => {
                     let iconName: any = 'square';
-                    if (route.name === 'Gallery') iconName = 'image';
-                    else if (route.name === 'Upload') iconName = 'plus-circle';
-                    else if (route.name === 'Settings') iconName = 'settings';
+                    if (route.name === 'Photos') iconName = 'image';
+                    else if (route.name === 'Albums') iconName = 'grid';
 
                     return (
                         <Feather
                             name={iconName}
-                            size={focused ? 28 : 24}
+                            size={focused ? 28 : 26}
                             color={color}
                             style={focused ? styles.iconFocused : undefined}
                         />
@@ -48,9 +46,8 @@ export default function TabNavigator() {
                 },
             })}
         >
-            <Tab.Screen name="Gallery" component={GalleryScreen} />
-            <Tab.Screen name="Upload" component={UploadScreen} />
-            <Tab.Screen name="Settings" component={SettingsScreen} />
+            <Tab.Screen name="Photos" component={GalleryScreen} />
+            <Tab.Screen name="Albums" component={AlbumsScreen} />
         </Tab.Navigator>
     );
 }
