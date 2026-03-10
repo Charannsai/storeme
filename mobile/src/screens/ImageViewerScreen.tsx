@@ -59,6 +59,7 @@ export default function ImageViewerScreen() {
             }
 
             const mobileUrl = getMobileUrl(currentItem.raw_url);
+            // @ts-ignore
             const fileUri = `${FileSystem.documentDirectory}${currentItem.filename}`;
             const downloadRes = await FileSystem.downloadAsync(mobileUrl, fileUri);
             await MediaLibrary.saveToLibraryAsync(downloadRes.uri);
