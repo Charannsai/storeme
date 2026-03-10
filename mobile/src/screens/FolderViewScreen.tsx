@@ -164,7 +164,7 @@ export default function FolderViewScreen() {
     if (loading && !refreshing && items.length === 0) {
         return (
             <View style={[styles.container, styles.centered]}>
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color="#1A1A1A" />
             </View>
         );
     }
@@ -213,7 +213,7 @@ export default function FolderViewScreen() {
                     numColumns={COLUMN_COUNT}
                     columnWrapperStyle={styles.row}
                     contentContainerStyle={{ paddingBottom: 120 }}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3B82F6" />}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1A1A1A" />}
                     initialNumToRender={15}
                     maxToRenderPerBatch={10}
                     windowSize={5}
@@ -267,15 +267,15 @@ const styles = StyleSheet.create({
     iconBtn: { width: 40, height: 40, backgroundColor: '#F1F5F9', borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
     selectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 40 },
     selectCount: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
-    selectAllText: { fontSize: 15, fontWeight: '600', color: '#3B82F6' },
+    selectAllText: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
 
     itemContainer: { width: ITEM_SIZE, height: ITEM_SIZE, padding: ITEM_SPACING / 2 },
     image: { flex: 1, backgroundColor: '#E2E8F0', borderRadius: 8 },
     imageSelected: { transform: [{ scale: 0.9 }], borderRadius: 12 },
     selectOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-start', alignItems: 'flex-end', padding: 8 },
-    selectedOverlay: { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 8 },
+    selectedOverlay: { backgroundColor: 'rgba(26, 26, 26, 0.15)', borderRadius: 8 },
     checkbox: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: '#FFF', backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' },
-    checkboxSelected: { backgroundColor: '#3B82F6', borderColor: '#3B82F6', transform: [{ scale: 1.1 }] },
+    checkboxSelected: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A', transform: [{ scale: 1.1 }] },
 
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
     emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },

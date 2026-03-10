@@ -78,22 +78,19 @@ export default function RootNavigator() {
                 <Stack.Screen
                     name="FolderView"
                     component={FolderViewScreen}
-                    options={{ animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                     name="TrashBin"
                     component={TrashScreen}
-                    options={{ animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                     name="AllPhotos"
                     component={AllPhotosScreen}
-                    options={{ animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                     name="Settings"
                     component={SettingsScreen}
-                    options={{ animation: 'slide_from_bottom' }}
+                    options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
                 />
             </Stack.Navigator>
         </NavigationContainer>

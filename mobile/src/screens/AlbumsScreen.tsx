@@ -32,7 +32,6 @@ export default function AlbumsScreen() {
     }, []);
 
     useEffect(() => {
-        // Fetch folders on mount and when screen comes into focus
         const unsubscribe = navigation.addListener('focus', () => {
             fetchFolders();
         });
@@ -73,27 +72,31 @@ export default function AlbumsScreen() {
     };
 
     const renderHeader = () => (
-        <View style={styles.staticAlbumsContainer}>
-            <TouchableOpacity style={styles.albumRow} onPress={() => navigation.navigate('AllPhotos')}>
-                <View style={[styles.albumIconBg, { backgroundColor: '#EFF6FF' }]}>
-                    <Feather name="image" size={24} color="#3B82F6" />
-                </View>
-                <Text style={styles.albumRowTitle}>All Photos</Text>
-                <Feather name="chevron-right" size={20} color="#CBD5E1" />
-            </TouchableOpacity>
+        <View style={styles.headerSection}>
+            <View style={styles.utilitiesCard}>
+                <TouchableOpacity style={styles.utilityRow} onPress={() => navigation.navigate('AllPhotos')}>
+                    <View style={styles.utilityIconBg}>
+                        <Feather name="image" size={20} color="#1A1A1A" />
+                    </View>
+                    <Text style={styles.utilityRowTitle}>All Photos</Text>
+                    <Feather name="chevron-right" size={20} color="#94A3B8" />
+                </TouchableOpacity>
 
-            <TouchableOpacity style={styles.albumRow} onPress={() => navigation.navigate('TrashBin')}>
-                <View style={[styles.albumIconBg, { backgroundColor: '#FEF2F2' }]}>
-                    <Feather name="trash-2" size={24} color="#EF4444" />
-                </View>
-                <Text style={styles.albumRowTitle}>Recently Deleted</Text>
-                <Feather name="chevron-right" size={20} color="#CBD5E1" />
-            </TouchableOpacity>
+                <View style={styles.divider} />
+
+                <TouchableOpacity style={styles.utilityRow} onPress={() => navigation.navigate('TrashBin')}>
+                    <View style={styles.utilityIconBg}>
+                        <Feather name="trash-2" size={20} color="#EF4444" />
+                    </View>
+                    <Text style={styles.utilityRowTitle}>Recently Deleted</Text>
+                    <Feather name="chevron-right" size={20} color="#94A3B8" />
+                </TouchableOpacity>
+            </View>
 
             <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>My Folders</Text>
-                <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setCreateFolderVisible(true); }}>
-                    <Feather name="plus-circle" size={22} color="#3B82F6" />
+                <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setCreateFolderVisible(true); }} style={styles.addBtn}>
+                    <Feather name="plus" size={20} color="#1A1A1A" />
                 </TouchableOpacity>
             </View>
         </View>
@@ -102,12 +105,12 @@ export default function AlbumsScreen() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#FAFAFA" />
-            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+            <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
                 <Text style={styles.headerTitle}>Albums</Text>
             </View>
 
             {loading ? (
-                <View style={styles.centered}><ActivityIndicator size="large" color="#3B82F6" /></View>
+                <View style={styles.centered}><ActivityIndicator size="large" color="#1A1A1A" /></View>
             ) : (
                 <FlatList
                     data={folders}
@@ -132,8 +135,8 @@ export default function AlbumsScreen() {
                             onPress={() => navigation.navigate('FolderView', { folder: item })}
                             onLongPress={() => handleDeleteFolder(item)}
                         >
-                            <View style={styles.folderIconWrapper}>
-                                <Feather name="folder" size={32} color="#3B82F6" />
+                            <View style={[styles.folderCardInner, { backgroundColor: '#F8FAFC' }]}>
+                                <Feather name="folder" size={28} color="#1A1A1A" />
                             </View>
                             <Text style={styles.folderName} numberOfLines={1}>{item.name}</Text>
                         </TouchableOpacity>
@@ -145,7 +148,7 @@ export default function AlbumsScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>New Folder</Text>
-                        <Text style={styles.modalDesc}>Organize your gallery by creating a new folder.</Text>
+                        <Text style={styles.modalDesc}>Give this folder a unique name.</Text>
                         <TextInput
                             style={styles.modalInput}
                             placeholder="e.g. Vacation 2026"
@@ -172,49 +175,52 @@ export default function AlbumsScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FAFAFA' },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    header: { paddingHorizontal: 20, paddingBottom: 16, backgroundColor: '#FAFAFA', borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-    headerTitle: { fontSize: 32, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
+    header: { paddingHorizontal: 20, paddingBottom: 16, backgroundColor: '#FAFAFA' },
+    headerTitle: { fontSize: 34, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
 
-    staticAlbumsContainer: { paddingHorizontal: 20, paddingTop: 20 },
-    albumRow: {
-        flexDirection: 'row', alignItems: 'center', marginBottom: 12,
-        backgroundColor: '#FFFFFF', padding: 12, borderRadius: 16,
+    headerSection: { paddingHorizontal: 20, paddingTop: 8 },
+
+    utilitiesCard: {
+        backgroundColor: '#FFFFFF', borderRadius: 20, marginBottom: 24,
         shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2,
         borderWidth: 1, borderColor: '#F1F5F9'
     },
-    albumIconBg: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
-    albumRowTitle: { flex: 1, fontSize: 17, fontWeight: '600', color: '#1E293B' },
+    utilityRow: { flexDirection: 'row', alignItems: 'center', padding: 16 },
+    utilityIconBg: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16, backgroundColor: '#F8FAFC' },
+    utilityRowTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#1E293B' },
+    divider: { height: 1, backgroundColor: '#F1F5F9', marginLeft: 72 }, // Aligned with text
 
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 32, marginBottom: 16 },
-    sectionTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', letterSpacing: -0.5 },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+    sectionTitle: { fontSize: 22, fontWeight: '700', color: '#0F172A', letterSpacing: -0.5 },
+    addBtn: { padding: 8, backgroundColor: '#F1F5F9', borderRadius: 20 },
 
-    gridRow: { paddingHorizontal: 14, justifyContent: 'space-between' },
+    gridRow: { paddingHorizontal: 16, justifyContent: 'space-between' },
     folderCard: {
-        width: (width - 44) / 2, padding: 20, backgroundColor: '#FFFFFF',
-        borderRadius: 20, marginBottom: 16, alignItems: 'center',
-        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2,
+        width: (width - 48) / 2, marginBottom: 20, alignItems: 'center',
+    },
+    folderCardInner: {
+        width: '100%', aspectRatio: 1, borderRadius: 24, justifyContent: 'center', alignItems: 'center', marginBottom: 12,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 12, elevation: 1,
         borderWidth: 1, borderColor: '#F1F5F9'
     },
-    folderIconWrapper: { width: 64, height: 64, borderRadius: 20, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-    folderName: { fontSize: 16, fontWeight: '600', color: '#475569', textAlign: 'center' },
+    folderName: { fontSize: 15, fontWeight: '600', color: '#1E293B', textAlign: 'center' },
 
-    emptyContainer: { alignItems: 'center', marginTop: 40, paddingHorizontal: 40 },
+    emptyContainer: { alignItems: 'center', paddingTop: 40, paddingHorizontal: 40 },
     emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
     emptyTitle: { fontSize: 20, fontWeight: '700', color: '#1E293B', marginBottom: 8 },
     emptySubtitle: { fontSize: 15, color: '#64748B', textAlign: 'center' },
 
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'flex-end' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'center', alignItems: 'center', padding: 20 },
     modalContent: {
-        backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24,
-        padding: 24, paddingBottom: 40,
-        shadowColor: '#000', shadowOffset: { width: 0, height: -8 }, shadowOpacity: 0.1, shadowRadius: 24, elevation: 16,
+        width: '100%', backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 16,
     },
-    modalTitle: { fontSize: 22, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
-    modalDesc: { fontSize: 15, color: '#64748B', marginBottom: 20 },
+    modalTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
+    modalDesc: { fontSize: 15, color: '#64748B', marginBottom: 24 },
     modalInput: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontSize: 16, color: '#0F172A', backgroundColor: '#F8FAFC', marginBottom: 24 },
     modalButtons: { flexDirection: 'row', gap: 12 },
     modalBtnCancel: { flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center' },
     modalBtnCancelText: { fontSize: 16, fontWeight: '600', color: '#475569' },
-    modalBtnCreate: { flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: '#3B82F6', alignItems: 'center' },
+    modalBtnCreate: { flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: '#1A1A1A', alignItems: 'center' },
     modalBtnCreateText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 });

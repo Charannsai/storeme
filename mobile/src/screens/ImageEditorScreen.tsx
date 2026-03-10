@@ -314,11 +314,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.15)',
         justifyContent: 'center', alignItems: 'center',
     },
-    activeToolCircle: { backgroundColor: '#3B82F6' },
+    activeToolCircle: { backgroundColor: '#1A1A1A' },
     toolLabel: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.7)' },
 
     saveBtn: {
-        backgroundColor: '#3B82F6', borderRadius: 14,
+        backgroundColor: '#1A1A1A', borderRadius: 14,
         paddingVertical: 16, alignItems: 'center', marginBottom: 8,
     },
     saveBtnText: { fontSize: 16, fontWeight: '700', color: '#FFF' },

@@ -28,7 +28,7 @@ export default function TabNavigator() {
                         <BlurView tint="light" intensity={80} style={StyleSheet.absoluteFill} />
                     ) : null
                 ),
-                tabBarActiveTintColor: '#3B82F6',
+                tabBarActiveTintColor: '#1A1A1A',
                 tabBarInactiveTintColor: '#94A3B8',
                 tabBarIcon: ({ focused, color }) => {
                     let iconName: any = 'square';
@@ -54,7 +54,7 @@ export default function TabNavigator() {
 
 const styles = StyleSheet.create({
     iconFocused: {
-        shadowColor: '#3B82F6',
+        shadowColor: '#1A1A1A',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,

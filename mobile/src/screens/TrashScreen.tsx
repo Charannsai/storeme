@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     iconBtn: { width: 40, height: 40, backgroundColor: '#F1F5F9', borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
     selectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 40 },
     selectCount: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
-    selectAllText: { fontSize: 15, fontWeight: '600', color: '#3B82F6' },
+    selectAllText: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
 
     infoBanner: {
         flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -309,9 +309,9 @@ const styles = StyleSheet.create({
     trashOverlay: { ...StyleSheet.absoluteFillObject, margin: ITEM_SPACING / 2, backgroundColor: 'rgba(255,255,255,0.4)', borderRadius: 8 },
 
     selectOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-start', alignItems: 'flex-end', padding: 8 },
-    selectedOverlay: { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 8 },
+    selectedOverlay: { backgroundColor: 'rgba(26, 26, 26, 0.15)', borderRadius: 8 },
     checkbox: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: '#FFF', backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' },
-    checkboxSelected: { backgroundColor: '#3B82F6', borderColor: '#3B82F6', transform: [{ scale: 1.1 }] },
+    checkboxSelected: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A', transform: [{ scale: 1.1 }] },
 
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
     emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },

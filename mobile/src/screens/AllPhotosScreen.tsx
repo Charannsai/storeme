@@ -2,8 +2,12 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
     View, Text, StyleSheet, FlatList, ActivityIndicator,
     TouchableOpacity, Dimensions, RefreshControl, Modal, Alert,
-    StatusBar, TextInput, Platform
+    StatusBar, TextInput, Platform, LayoutAnimation, UIManager
 } from 'react-native';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -114,6 +118,7 @@ export default function AllPhotosScreen() {
     const onLongPress = useCallback((id: string) => {
         if (!selectMode) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setSelectMode(true);
             setSelectedIds(new Set([id]));
         }
@@ -124,6 +129,7 @@ export default function AllPhotosScreen() {
     }, [items, navigation]);
 
     const exitSelectMode = () => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setSelectMode(false);
         setSelectedIds(new Set());
     };
@@ -189,7 +195,7 @@ export default function AllPhotosScreen() {
     if (loading && !refreshing && items.length === 0) {
         return (
             <View style={[styles.container, styles.centered]}>
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color="#1A1A1A" />
             </View>
         );
     }
@@ -265,10 +271,10 @@ export default function AllPhotosScreen() {
                         <Text style={[styles.actionText, { color: '#DC2626' }]}>Trash</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={() => setMoveFolderVisible(true)}>
-                        <View style={[styles.actionIconBg, { backgroundColor: '#DBEAFE' }]}>
-                            <Feather name="folder-plus" size={20} color="#2563EB" />
+                        <View style={[styles.actionIconBg, { backgroundColor: '#E2E8F0' }]}>
+                            <Feather name="folder-plus" size={20} color="#0A0A0A" />
                         </View>
-                        <Text style={[styles.actionText, { color: '#2563EB' }]}>Move</Text>
+                        <Text style={[styles.actionText, { color: '#0A0A0A' }]}>Move</Text>
                     </TouchableOpacity>
                 </BlurView>
             )}
@@ -323,7 +329,7 @@ const styles = StyleSheet.create({
 
     selectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 40 },
     selectCount: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
-    selectAllText: { fontSize: 15, fontWeight: '600', color: '#3B82F6' },
+    selectAllText: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
 
     listHeader: { paddingBottom: 16 },
     foldersSection: { marginBottom: 8 },
@@ -339,7 +345,7 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: '#F1F5F9'
     },
     folderIconWrapper: {
-        width: 48, height: 48, borderRadius: 12, backgroundColor: '#EFF6FF',
+        width: 48, height: 48, borderRadius: 12, backgroundColor: '#F8FAFC',
         justifyContent: 'center', alignItems: 'center', marginBottom: 8
     },
     folderName: { fontSize: 13, fontWeight: '600', color: '#475569', textAlign: 'center' },
@@ -363,13 +369,13 @@ const styles = StyleSheet.create({
     imageSelected: { transform: [{ scale: 0.9 }], borderRadius: 12 },
 
     selectOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-start', alignItems: 'flex-end', padding: 8 },
-    selectedOverlay: { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderRadius: 8 },
+    selectedOverlay: { backgroundColor: 'rgba(26, 26, 26, 0.15)', borderRadius: 8 },
     checkbox: {
         width: 24, height: 24, borderRadius: 12, borderWidth: 1.5,
         borderColor: '#FFF', backgroundColor: 'rgba(0,0,0,0.2)',
         justifyContent: 'center', alignItems: 'center'
     },
-    checkboxSelected: { backgroundColor: '#3B82F6', borderColor: '#3B82F6', transform: [{ scale: 1.1 }] },
+    checkboxSelected: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A', transform: [{ scale: 1.1 }] },
 
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
     emptyIconCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
@@ -412,7 +418,7 @@ const styles = StyleSheet.create({
     modalButtons: { flexDirection: 'row', gap: 12 },
     modalBtnCancel: { flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center' },
     modalBtnCancelText: { fontSize: 16, fontWeight: '600', color: '#475569' },
-    modalBtnCreate: { flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: '#3B82F6', alignItems: 'center' },
+    modalBtnCreate: { flex: 1, paddingVertical: 16, borderRadius: 16, backgroundColor: '#1A1A1A', alignItems: 'center' },
     modalBtnCreateText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
 
     noFolderText: { fontSize: 15, color: '#94A3B8', textAlign: 'center', paddingVertical: 24 },

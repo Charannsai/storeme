@@ -195,20 +195,20 @@ export default function SettingsScreen({ navigation }: Props) {
                         <View style={styles.syncCardHeader}>
                             <View style={styles.syncIconContainer}>
                                 <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                                    <Feather name="refresh-cw" size={20} color="#3B82F6" />
+                                    <Feather name="refresh-cw" size={20} color="#1A1A1A" />
                                 </Animated.View>
                             </View>
                             <View style={styles.syncCardText}>
                                 <Text style={styles.syncCardTitle}>Background Sync</Text>
                                 <Text style={styles.syncCardDesc}>Auto-backup camera roll</Text>
                             </View>
-                            <Switch value={autoSync} onValueChange={toggleAutoSync} trackColor={{ false: "#E2E8F0", true: "#3B82F6" }} thumbColor={"#FFFFFF"} />
+                            <Switch value={autoSync} onValueChange={toggleAutoSync} trackColor={{ false: "#E2E8F0", true: "#1A1A1A" }} thumbColor={"#FFFFFF"} />
                         </View>
 
                         <View style={styles.divider} />
 
                         <TouchableOpacity style={styles.manualUploadBtn} onPress={pickMedia} disabled={loadingUpload} activeOpacity={0.7}>
-                            {loadingUpload ? <ActivityIndicator color="#3B82F6" /> : <Feather name="upload-cloud" size={20} color="#3B82F6" style={{ marginRight: 10 }} />}
+                            {loadingUpload ? <ActivityIndicator color="#1A1A1A" /> : <Feather name="upload-cloud" size={20} color="#1A1A1A" style={{ marginRight: 10 }} />}
                             <Text style={styles.manualUploadText}>Select files manually</Text>
                         </TouchableOpacity>
                     </View>
@@ -224,11 +224,11 @@ export default function SettingsScreen({ navigation }: Props) {
                                 <View style={styles.queueInfo}>
                                     <Text style={styles.queueName} numberOfLines={1}>{item.filename}</Text>
                                     <View style={styles.statusRow}>
-                                        <View style={[styles.statusDot, { backgroundColor: item.status === 'completed' ? '#10B981' : item.status === 'failed' ? '#EF4444' : item.status === 'uploading' ? '#3B82F6' : '#F59E0B' }]} />
+                                        <View style={[styles.statusDot, { backgroundColor: item.status === 'completed' ? '#10B981' : item.status === 'failed' ? '#EF4444' : item.status === 'uploading' ? '#1A1A1A' : '#F59E0B' }]} />
                                         <Text style={[styles.queueStatus, { color: item.status === 'completed' ? '#10B981' : item.status === 'failed' ? '#EF4444' : '#64748B' }]}>{item.status.toUpperCase()}</Text>
                                     </View>
                                 </View>
-                                {item.status === 'uploading' && <ActivityIndicator size="small" color="#3B82F6" />}
+                                {item.status === 'uploading' && <ActivityIndicator size="small" color="#1A1A1A" />}
                             </View>
                         ))}
                         {queue.length > 10 && <Text style={{ textAlign: 'center', color: '#94A3B8', marginTop: 8 }}>+ {queue.length - 10} more items</Text>}
@@ -239,7 +239,7 @@ export default function SettingsScreen({ navigation }: Props) {
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Storage Usage</Text>
                     {loadingStats ? (
-                        <View style={[styles.card, { alignItems: 'center', padding: 40 }]}><ActivityIndicator size="large" color="#3B82F6" /></View>
+                        <View style={[styles.card, { alignItems: 'center', padding: 40 }]}><ActivityIndicator size="large" color="#1A1A1A" /></View>
                     ) : (
                         <View style={styles.card}>
                             <View style={styles.statsHeader}>
@@ -248,7 +248,7 @@ export default function SettingsScreen({ navigation }: Props) {
                             </View>
 
                             <View style={styles.progressBar}>
-                                <View style={[styles.progressFill, { width: `${storagePercent}%`, backgroundColor: storagePercent > 90 ? '#EF4444' : '#3B82F6' }]} />
+                                <View style={[styles.progressFill, { width: `${storagePercent}%`, backgroundColor: storagePercent > 90 ? '#EF4444' : '#1A1A1A' }]} />
                             </View>
 
                             <View style={styles.statsGrid}>
@@ -290,8 +290,8 @@ const styles = StyleSheet.create({
 
     card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.04, shadowRadius: 12, elevation: 2 },
 
-    avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-    avatarText: { fontSize: 22, fontWeight: '700', color: '#2563EB' },
+    avatar: { width: 56, height: 56, borderRadius: 28, backgroundColor: '#F8FAFC', alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+    avatarText: { fontSize: 22, fontWeight: '700', color: '#0A0A0A' },
     userInfo: { flex: 1 },
     userEmail: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 2 },
     userId: { fontSize: 13, color: '#64748B' },
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     logoutText: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
 
     syncCardHeader: { flexDirection: 'row', alignItems: 'center', padding: 20 },
-    syncIconContainer: { width: 44, height: 44, borderRadius: 16, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
+    syncIconContainer: { width: 44, height: 44, borderRadius: 16, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', marginRight: 16 },
     syncCardText: { flex: 1 },
     syncCardTitle: { fontSize: 15, fontWeight: '700', color: '#1E293B', marginBottom: 4 },
     syncCardDesc: { fontSize: 13, color: '#64748B' },
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
     divider: { height: 1, backgroundColor: '#F1F5F9' },
 
     manualUploadBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 20, backgroundColor: '#FFFFFF', borderBottomLeftRadius: 20, borderBottomRightRadius: 20 },
-    manualUploadText: { fontSize: 15, fontWeight: '700', color: '#3B82F6' },
+    manualUploadText: { fontSize: 15, fontWeight: '700', color: '#1A1A1A' },
 
     queueItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', padding: 12, borderRadius: 16, marginBottom: 8, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
     queueThumb: { width: 44, height: 44, borderRadius: 10, marginRight: 12, backgroundColor: '#F1F5F9' },
