@@ -1,27 +1,36 @@
 import React from 'react';
-import { StyleSheet, Platform } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { StyleSheet, Platform, View } from 'react-native';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { BlurView } from 'expo-blur';
 import { Feather } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DashboardTabParamList } from '../types';
 import GalleryScreen from '../screens/GalleryScreen';
 import AlbumsScreen from '../screens/AlbumsScreen';
 
-const Tab = createBottomTabNavigator<DashboardTabParamList>();
+const Tab = createMaterialTopTabNavigator<DashboardTabParamList>();
 
 export default function TabNavigator() {
+    const insets = useSafeAreaInsets();
+
     return (
         <Tab.Navigator
+            tabBarPosition="bottom"
             screenOptions={({ route }) => ({
-                headerShown: false,
+                swipeEnabled: true,
                 tabBarShowLabel: false,
+                tabBarIndicatorStyle: { height: 0 },
                 tabBarStyle: {
                     position: 'absolute',
-                    borderTopWidth: 0,
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
                     elevation: 0,
                     backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(255,255,255,0.9)',
-                    height: 80,
+                    height: 60 + insets.bottom,
+                    borderTopWidth: 0,
+                    shadowColor: 'transparent',
                 },
                 tabBarBackground: () => (
                     Platform.OS === 'ios' ? (
@@ -36,12 +45,14 @@ export default function TabNavigator() {
                     else if (route.name === 'Albums') iconName = 'grid';
 
                     return (
-                        <Feather
-                            name={iconName}
-                            size={focused ? 28 : 26}
-                            color={color}
-                            style={focused ? styles.iconFocused : undefined}
-                        />
+                        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+                            <Feather
+                                name={iconName}
+                                size={focused ? 28 : 26}
+                                color={color}
+                                style={focused ? styles.iconFocused : undefined}
+                            />
+                        </View>
                     );
                 },
             })}

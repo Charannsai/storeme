@@ -63,7 +63,8 @@ export default function RootNavigator() {
                     name="ImageViewer"
                     component={ImageViewerScreen}
                     options={{
-                        animation: 'fade',
+                        animation: 'slide_from_bottom',
+                        presentation: 'transparentModal',
                         contentStyle: { backgroundColor: '#000' },
                     }}
                 />

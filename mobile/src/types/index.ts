@@ -17,6 +17,7 @@ export interface Folder {
     id: string;    // Same as name (folder name is the ID)
     name: string;
     path: string;  // Full GitHub path
+    cover_url?: string; // Optional thumbnail cover
 }
 
 export interface UploadQueueItem {

@@ -392,11 +392,12 @@ const styles = StyleSheet.create({
     actionIconBg: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
     actionText: { fontSize: 13, fontWeight: '600' },
 
-    menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+    menuOverlay: { flex: 1, backgroundColor: 'transparent', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 20 },
     menuContainer: {
-        width: 240, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 8,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1, shadowRadius: 20, elevation: 10,
+        width: 220, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 8,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1, shadowRadius: 16, elevation: 10,
+        borderWidth: 1, borderColor: '#F1F5F9'
     },
     menuTitle: { fontSize: 13, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', paddingHorizontal: 16, paddingVertical: 12 },
     menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12 },

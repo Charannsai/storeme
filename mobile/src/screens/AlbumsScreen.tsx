@@ -4,8 +4,9 @@ import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import api from '../services/api';
+import api, { API_URL } from '../services/api';
 import { Folder } from '../types';
+import { Image } from 'expo-image';
 
 const { width } = Dimensions.get('window');
 
@@ -17,12 +18,22 @@ export default function AlbumsScreen() {
     const [loading, setLoading] = useState(true);
     const [createFolderVisible, setCreateFolderVisible] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
+    const [allPhotosCover, setAllPhotosCover] = useState<string | null>(null);
+
+    const getMobileUrl = (rawUrl: string) => rawUrl.replace('http://localhost:3000', API_URL);
 
     const fetchFolders = useCallback(async () => {
         try {
-            const res = await api.get('/api/folders');
-            if (res.data.success) {
-                setFolders(res.data.data.folders);
+            const [foldersRes, allPhotosRes] = await Promise.all([
+                api.get('/api/folders'),
+                api.get('/api/gallery?limit=1')
+            ]);
+
+            if (foldersRes.data.success) {
+                setFolders(foldersRes.data.data.folders);
+            }
+            if (allPhotosRes.data.success && allPhotosRes.data.data.items.length > 0) {
+                setAllPhotosCover(getMobileUrl(allPhotosRes.data.data.items[0].raw_url));
             }
         } catch (err) {
             console.error('Fetch folders error', err);
@@ -75,9 +86,13 @@ export default function AlbumsScreen() {
         <View style={styles.headerSection}>
             <View style={styles.utilitiesCard}>
                 <TouchableOpacity style={styles.utilityRow} onPress={() => navigation.navigate('AllPhotos')}>
-                    <View style={styles.utilityIconBg}>
-                        <Feather name="image" size={20} color="#1A1A1A" />
-                    </View>
+                    {allPhotosCover ? (
+                        <Image source={{ uri: allPhotosCover }} style={styles.utilityCoverImage} contentFit="cover" transition={200} cachePolicy="memory-disk" />
+                    ) : (
+                        <View style={styles.utilityIconBg}>
+                            <Feather name="image" size={20} color="#1A1A1A" />
+                        </View>
+                    )}
                     <Text style={styles.utilityRowTitle}>All Photos</Text>
                     <Feather name="chevron-right" size={20} color="#94A3B8" />
                 </TouchableOpacity>
@@ -135,8 +150,12 @@ export default function AlbumsScreen() {
                             onPress={() => navigation.navigate('FolderView', { folder: item })}
                             onLongPress={() => handleDeleteFolder(item)}
                         >
-                            <View style={[styles.folderCardInner, { backgroundColor: '#F8FAFC' }]}>
-                                <Feather name="folder" size={28} color="#1A1A1A" />
+                            <View style={[styles.folderCardInner, { backgroundColor: '#F8FAFC', overflow: 'hidden' }]}>
+                                {item.cover_url ? (
+                                    <Image source={{ uri: getMobileUrl(item.cover_url) }} style={StyleSheet.absoluteFillObject} contentFit="cover" transition={200} cachePolicy="memory-disk" />
+                                ) : (
+                                    <Feather name="folder" size={28} color="#1A1A1A" />
+                                )}
                             </View>
                             <Text style={styles.folderName} numberOfLines={1}>{item.name}</Text>
                         </TouchableOpacity>
@@ -187,6 +206,7 @@ const styles = StyleSheet.create({
     },
     utilityRow: { flexDirection: 'row', alignItems: 'center', padding: 16 },
     utilityIconBg: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16, backgroundColor: '#F8FAFC' },
+    utilityCoverImage: { width: 40, height: 40, borderRadius: 12, marginRight: 16, backgroundColor: '#F8FAFC' },
     utilityRowTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: '#1E293B' },
     divider: { height: 1, backgroundColor: '#F1F5F9', marginLeft: 72 }, // Aligned with text
 

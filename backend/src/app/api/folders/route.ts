@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { getAuthenticatedUser, getGitHubAccount, errorResponse, successResponse } from '@/lib/auth';
 import { listDirectoryInGitHub, createDirectoryInGitHub, deleteFileFromGitHub, listDirectoryInGitHub as listDir } from '@/lib/github';
 
+import { supabaseAdmin } from '@/lib/supabase';
+
 const FOLDERS_ROOT = 'gallery/folders';
 
 /**
@@ -23,14 +25,39 @@ export async function GET(request: NextRequest) {
             FOLDERS_ROOT
         );
 
-        // Only return directories (not .gitkeep files)
-        const folders = items
-            .filter(item => item.type === 'dir')
-            .map(item => ({
-                id: item.name, // folder name acts as ID
-                name: item.name,
+        const token = request.headers.get('authorization')?.replace('Bearer ', '');
+        const host = request.headers.get('host') || 'localhost:3000';
+        const protocol = request.headers.get('x-forwarded-proto') || 'http';
+        const origin = `${protocol}://${host}`;
+
+        // Only return directories
+        const directories = items.filter(item => item.type === 'dir');
+
+        // Concurrently find a cover image for each folder
+        const folders = await Promise.all(directories.map(async item => {
+            const folderName = item.name;
+            let cover_url = null;
+
+            const { data: recentFiles } = await supabaseAdmin
+                .from('media_files')
+                .select('id, file_type')
+                .eq('user_id', user.id)
+                .eq('status', 'synced')
+                .like('github_path', `gallery/folders/${folderName}/%`)
+                .order('uploaded_at', { ascending: false })
+                .limit(1);
+
+            if (recentFiles && recentFiles.length > 0 && recentFiles[0].file_type === 'image') {
+                cover_url = `${origin}/api/file/media?id=${recentFiles[0].id}&token=${token}`;
+            }
+
+            return {
+                id: folderName,
+                name: folderName,
                 path: item.path,
-            }));
+                cover_url
+            };
+        }));
 
         return successResponse({ folders });
     } catch (err) {
