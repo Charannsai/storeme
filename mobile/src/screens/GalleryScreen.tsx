@@ -106,10 +106,65 @@ export default function GalleryScreen() {
     }, []);
 
     useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchData();
+        });
         fetchData();
-    }, [fetchData]);
+        return unsubscribe;
+    }, [navigation, fetchData]);
 
     const onRefresh = () => fetchData(true);
+
+    const groupedData = useMemo(() => {
+        const rows: any[] = [];
+        let currentGroup = '';
+        let currentChunk: GalleryItem[] = [];
+
+        const flushChunk = () => {
+            if (currentChunk.length > 0) {
+                const rowItems = [...currentChunk];
+                rows.push({ type: 'row', items: rowItems, id: rowItems[0].id + '_row' });
+                currentChunk = [];
+            }
+        };
+
+        items.forEach((item) => {
+            const dateStr = item.uploaded_at;
+            let groupName = 'Earlier';
+            if (dateStr) {
+                const d = new Date(dateStr);
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+
+                const checkDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+                if (checkDate.getTime() === today.getTime()) groupName = 'Today';
+                else if (checkDate.getTime() === yesterday.getTime()) groupName = 'Yesterday';
+                else {
+                    groupName = d.toLocaleDateString(undefined, {
+                        month: 'long',
+                        day: 'numeric',
+                        year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+                    });
+                }
+            }
+
+            if (groupName !== currentGroup) {
+                flushChunk();
+                rows.push({ type: 'header', title: groupName, id: 'header_' + groupName });
+                currentGroup = groupName;
+            }
+
+            currentChunk.push(item);
+            if (currentChunk.length === COLUMN_COUNT) {
+                flushChunk();
+            }
+        });
+        flushChunk();
+        return rows;
+    }, [items]);
 
     const toggleSelect = useCallback((id: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -176,13 +231,32 @@ export default function GalleryScreen() {
         }
     };
 
-    const renderHeader = () => (
-        <View style={styles.listHeader}>
-            {items.length > 0 && !selectMode && (
-                <Text style={[styles.sectionTitle, { marginLeft: 16, marginBottom: 8 }]}>Recent Photos</Text>
-            )}
-        </View>
-    );
+    // header block moved inline
+    const renderRowItem = ({ item }: any) => {
+        if (item.type === 'header') {
+            return <Text style={styles.dateHeader}>{item.title}</Text>;
+        }
+
+        return (
+            <View style={styles.gridRow}>
+                {item.items.map((galleryItem: GalleryItem) => {
+                    const originalIndex = items.findIndex((i) => i.id === galleryItem.id);
+                    return (
+                        <GalleryGridItem
+                            key={galleryItem.id}
+                            item={galleryItem}
+                            index={originalIndex}
+                            isSelected={selectedIds.has(galleryItem.id)}
+                            selectMode={selectMode}
+                            onSelect={toggleSelect}
+                            onLongPress={onLongPress}
+                            onPressItem={onPressItem}
+                        />
+                    );
+                })}
+            </View>
+        );
+    };
 
     if (loading && !refreshing && items.length === 0) {
         return (
@@ -226,33 +300,21 @@ export default function GalleryScreen() {
                 </View>
             ) : (
                 <FlatList
-                    data={items}
+                    data={groupedData}
                     keyExtractor={item => item.id}
-                    numColumns={COLUMN_COUNT}
-                    ListHeaderComponent={renderHeader}
-                    columnWrapperStyle={styles.row}
+                    numColumns={1}
                     refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1A1A1A" />}
-                    contentContainerStyle={{ paddingBottom: 120 }} // Space for fab/tab
-                    initialNumToRender={15}
+                    contentContainerStyle={{ paddingBottom: 120, paddingTop: 8 }}
+                    initialNumToRender={10}
                     maxToRenderPerBatch={10}
                     windowSize={5}
                     removeClippedSubviews={Platform.OS === 'android'}
-                    getItemLayout={(data, index) => ({ length: ITEM_SIZE, offset: ITEM_SIZE * Math.floor(index / COLUMN_COUNT), index })}
-                    renderItem={({ item, index }) => (
-                        <GalleryGridItem
-                            item={item} index={index}
-                            isSelected={selectedIds.has(item.id)}
-                            selectMode={selectMode}
-                            onSelect={toggleSelect}
-                            onLongPress={onLongPress}
-                            onPressItem={onPressItem}
-                        />
-                    )}
+                    renderItem={renderRowItem}
                 />
             )}
 
             {selectMode && selectedIds.size > 0 && (
-                <BlurView intensity={80} tint="light" style={[styles.actionBar, { paddingBottom: insets.bottom || 16 }]}>
+                <BlurView intensity={80} tint="light" style={[styles.actionBar, { bottom: 60 + (insets.bottom || 0), paddingBottom: 16 }]}>
                     <TouchableOpacity style={styles.actionBtn} onPress={handleBulkTrash}>
                         <View style={[styles.actionIconBg, { backgroundColor: '#FEE2E2' }]}>
                             <Feather name="trash-2" size={20} color="#DC2626" />
@@ -318,7 +380,9 @@ export default function GalleryScreen() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FAFAFA' },
     centered: { justifyContent: 'center', alignItems: 'center' },
-    row: { paddingHorizontal: ITEM_SPACING / 2 },
+
+    dateHeader: { fontSize: 18, fontWeight: '700', color: '#0F172A', paddingHorizontal: 20, paddingTop: 24, paddingBottom: 12 },
+    gridRow: { flexDirection: 'row', paddingHorizontal: ITEM_SPACING / 2 },
 
     header: {
         paddingHorizontal: 20, paddingBottom: 16,

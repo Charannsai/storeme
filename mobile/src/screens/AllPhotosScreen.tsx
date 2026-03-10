@@ -67,6 +67,7 @@ export default function AllPhotosScreen() {
     const insets = useSafeAreaInsets();
 
     const [items, setItems] = useState<GalleryItem[]>([]);
+    const [folders, setFolders] = useState<Folder[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -81,7 +82,10 @@ export default function AllPhotosScreen() {
     const fetchData = useCallback(async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true);
         try {
-            const galleryRes = await api.get('/api/gallery?limit=100');
+            const [galleryRes, foldersRes] = await Promise.all([
+                api.get('/api/gallery?limit=100'),
+                api.get('/api/folders')
+            ]);
 
             if (galleryRes.data.success) {
                 // Pre-process URLs for expo-image wrapper
@@ -91,6 +95,7 @@ export default function AllPhotosScreen() {
                 }));
                 setItems(processedItems);
             }
+            if (foldersRes.data.success) setFolders(foldersRes.data.data.folders);
         } catch (err) {
             console.error('Fetch error:', err);
         } finally {
@@ -100,8 +105,12 @@ export default function AllPhotosScreen() {
     }, []);
 
     useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchData();
+        });
         fetchData();
-    }, [fetchData]);
+        return unsubscribe;
+    }, [navigation, fetchData]);
 
     const onRefresh = () => fetchData(true);
 
@@ -299,9 +308,21 @@ export default function AllPhotosScreen() {
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
                         <Text style={styles.modalTitle}>Move to...</Text>
-                        {/* Simplified since we don't have folders array loaded here natively, 
-                            Move operation from All Photos is currently hidden or needs a different fetch */}
-                        <Text style={styles.noFolderText}>Move supported from Albums folder list instead.</Text>
+                        {folders.length === 0 ? (
+                            <Text style={styles.noFolderText}>No folders available. Create one in Albums tab.</Text>
+                        ) : (
+                            <FlatList
+                                data={folders}
+                                keyExtractor={item => item.id}
+                                style={{ maxHeight: 250, marginVertical: 10 }}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity style={styles.folderOption} onPress={() => handleBulkMove(item.name)}>
+                                        <Feather name="folder" size={20} color="#1A1A1A" />
+                                        <Text style={styles.folderOptionText}>{item.name}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        )}
                         <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setMoveFolderVisible(false)}>
                             <Text style={styles.modalBtnCancelText}>Close</Text>
                         </TouchableOpacity>
