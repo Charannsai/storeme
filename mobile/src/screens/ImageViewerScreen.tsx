@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
+import { Video, ResizeMode } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -103,15 +104,26 @@ export default function ImageViewerScreen() {
         navigation.navigate('ImageEditor', { imageUri: mobileUrl, fileId: currentItem.id });
     };
 
-    const renderItem = ({ item }: { item: GalleryItem }) => (
+    const renderItem = ({ item, index }: { item: GalleryItem, index: number }) => (
         <View style={styles.slide}>
-            <Image
-                source={{ uri: getMobileUrl(item.raw_url) }}
-                style={styles.fullImage}
-                contentFit="contain"
-                cachePolicy="memory-disk"
-                transition={300}
-            />
+            {item.file_type === 'video' ? (
+                <Video
+                    source={{ uri: getMobileUrl(item.raw_url) }}
+                    style={styles.fullImage}
+                    resizeMode={ResizeMode.CONTAIN}
+                    useNativeControls
+                    shouldPlay={currentIndex === index}
+                    isLooping
+                />
+            ) : (
+                <Image
+                    source={{ uri: getMobileUrl(item.raw_url) }}
+                    style={styles.fullImage}
+                    contentFit="contain"
+                    cachePolicy="memory-disk"
+                    transition={300}
+                />
+            )}
         </View>
     );
 

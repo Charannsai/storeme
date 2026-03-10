@@ -47,6 +47,11 @@ const GalleryGridItem = React.memo(({ item, index, isSelected, selectMode, onSel
                 transition={200}
                 cachePolicy="memory-disk"
             />
+            {item.file_type === 'video' && (
+                <View style={styles.videoOverlay}>
+                    <Feather name="play-circle" size={24} color="rgba(255,255,255,0.9)" />
+                </View>
+            )}
             {selectMode && (
                 <View style={[styles.selectOverlay, isSelected && styles.selectedOverlay]}>
                     <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -432,6 +437,8 @@ const styles = StyleSheet.create({
     itemContainer: { width: ITEM_SIZE, height: ITEM_SIZE, padding: ITEM_SPACING / 2 },
     image: { flex: 1, backgroundColor: '#E2E8F0', borderRadius: 8 },
     imageSelected: { transform: [{ scale: 0.9 }], borderRadius: 12 },
+
+    videoOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
 
     selectOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-start', alignItems: 'flex-end', padding: 8 },
     selectedOverlay: { backgroundColor: 'rgba(26, 26, 26, 0.15)', borderRadius: 8 },
