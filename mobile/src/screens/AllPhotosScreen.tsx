@@ -2,12 +2,9 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
     View, Text, StyleSheet, FlatList, ActivityIndicator,
     TouchableOpacity, Dimensions, RefreshControl, Modal, Alert,
-    StatusBar, TextInput, Platform, LayoutAnimation, UIManager
+    StatusBar, TextInput, Platform
 } from 'react-native';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -16,6 +13,7 @@ import { GalleryItem, Folder } from '../types';
 import api, { API_URL } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAlert } from '../components/CustomAlertProvider';
 
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 3;
@@ -70,6 +68,7 @@ const GalleryGridItem = React.memo(({ item, index, isSelected, selectMode, onSel
 export default function AllPhotosScreen() {
     const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
+    const { showAlert } = useAlert();
 
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [folders, setFolders] = useState<Folder[]>([]);
@@ -132,7 +131,6 @@ export default function AllPhotosScreen() {
     const onLongPress = useCallback((id: string) => {
         if (!selectMode) {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setSelectMode(true);
             setSelectedIds(new Set([id]));
         }
@@ -143,14 +141,13 @@ export default function AllPhotosScreen() {
     }, [items, navigation]);
 
     const exitSelectMode = () => {
-        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setSelectMode(false);
         setSelectedIds(new Set());
     };
 
     const handleBulkTrash = () => {
         if (selectedIds.size === 0) return;
-        Alert.alert(
+        showAlert(
             'Move to Trash',
             `Move ${selectedIds.size} file(s) to trash?`,
             [
@@ -164,7 +161,7 @@ export default function AllPhotosScreen() {
                             exitSelectMode();
                             fetchData();
                         } catch (err: any) {
-                            Alert.alert('Error', err.response?.data?.error || 'Failed to trash files');
+                            showAlert('Error', err.response?.data?.error || 'Failed to trash files');
                         }
                     }
                 }
@@ -180,7 +177,7 @@ export default function AllPhotosScreen() {
             fetchData();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (err: any) {
-            Alert.alert('Error', err.response?.data?.error || 'Failed to move files');
+            showAlert('Error', err.response?.data?.error || 'Failed to move files');
         }
     };
 
@@ -188,7 +185,7 @@ export default function AllPhotosScreen() {
 
     const handleDeleteFolder = (folder: Folder) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Alert.alert('Delete Folder', `Delete "${folder.name}"? Files inside will be moved back to gallery.`, [
+        showAlert('Delete Folder', `Delete "${folder.name}"? Files inside will be moved back to gallery.`, [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Delete', style: 'destructive',
@@ -197,7 +194,7 @@ export default function AllPhotosScreen() {
                         await api.request({ method: 'DELETE', url: '/api/folders', data: { name: folder.name } });
                         fetchData();
                     } catch (err: any) {
-                        Alert.alert('Error', 'Failed to delete folder');
+                        showAlert('Error', 'Failed to delete folder');
                     }
                 }
             }

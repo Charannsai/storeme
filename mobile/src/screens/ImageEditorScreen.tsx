@@ -9,6 +9,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system/legacy';
+import { useAlert } from '../components/CustomAlertProvider';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -18,6 +19,7 @@ export default function ImageEditorScreen() {
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
     const { imageUri, fileId } = route.params as { imageUri: string; fileId: string };
+    const { showAlert } = useAlert();
 
     const [currentUri, setCurrentUri] = useState(imageUri);
     const [originalUri] = useState(imageUri);
@@ -44,7 +46,7 @@ export default function ImageEditorScreen() {
             if (filterName) setActiveFilter(filterName);
         } catch (err: any) {
             console.error('Manipulation error:', err);
-            Alert.alert('Error', 'Failed to apply effect');
+            showAlert('Error', 'Failed to apply effect');
         }
     };
 
@@ -82,7 +84,7 @@ export default function ImageEditorScreen() {
             );
             setCurrentUri(result.uri);
         } catch (err) {
-            Alert.alert('Error', 'Failed to crop image');
+            showAlert('Error', 'Failed to crop image');
         }
     };
 
@@ -95,7 +97,7 @@ export default function ImageEditorScreen() {
             );
             setCurrentUri(result.uri);
         } catch (err) {
-            Alert.alert('Error', 'Failed to resize image');
+            showAlert('Error', 'Failed to resize image');
         }
     };
 
@@ -112,7 +114,7 @@ export default function ImageEditorScreen() {
             setSaving(true);
             const { status } = await MediaLibrary.requestPermissionsAsync();
             if (status !== 'granted') {
-                Alert.alert('Permission required', 'We need photo library access to save.');
+                showAlert('Permission required', 'We need photo library access to save.');
                 return;
             }
 
@@ -127,11 +129,11 @@ export default function ImageEditorScreen() {
             }
 
             await MediaLibrary.saveToLibraryAsync(localUri);
-            Alert.alert('Saved!', 'Edited image saved to your device.');
+            showAlert('Saved!', 'Edited image saved to your device.');
             navigation.goBack();
         } catch (err: any) {
             console.error('Save error:', err);
-            Alert.alert('Error', 'Failed to save image');
+            showAlert('Error', 'Failed to save image');
         } finally {
             setSaving(false);
         }

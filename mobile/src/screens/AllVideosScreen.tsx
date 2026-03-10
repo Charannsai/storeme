@@ -1,15 +1,17 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
     View, Text, StyleSheet, FlatList, ActivityIndicator,
-    TouchableOpacity, Dimensions, RefreshControl, Alert, StatusBar, Platform
+    TouchableOpacity, Dimensions, Modal, Alert,
+    StatusBar, Platform
 } from 'react-native';
+
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { GalleryItem, Folder } from '../types';
 import api, { API_URL } from '../services/api';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAlert } from '../components/CustomAlertProvider';
 
@@ -18,8 +20,7 @@ const COLUMN_COUNT = 3;
 const ITEM_SPACING = 2;
 const ITEM_SIZE = (width - ITEM_SPACING * (COLUMN_COUNT - 1)) / COLUMN_COUNT;
 
-// Memoized item
-const FolderGridItem = React.memo(({ item, index, isSelected, selectMode, onSelect, onLongPress, onPressItem }: any) => {
+const GalleryGridItem = React.memo(({ item, index, isSelected, selectMode, onSelect, onLongPress, onPressItem }: any) => {
     return (
         <TouchableOpacity
             style={styles.itemContainer}
@@ -43,11 +44,9 @@ const FolderGridItem = React.memo(({ item, index, isSelected, selectMode, onSele
                 transition={200}
                 cachePolicy="memory-disk"
             />
-            {item.file_type === 'video' && (
-                <View style={styles.videoOverlay}>
-                    <Feather name="play-circle" size={24} color="rgba(255,255,255,0.9)" />
-                </View>
-            )}
+            <View style={styles.videoOverlay}>
+                <Feather name="play-circle" size={24} color="rgba(255,255,255,0.9)" />
+            </View>
             {selectMode && (
                 <View style={[styles.selectOverlay, isSelected && styles.selectedOverlay]}>
                     <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -63,47 +62,55 @@ const FolderGridItem = React.memo(({ item, index, isSelected, selectMode, onSele
         prev.item.id === next.item.id;
 });
 
-export default function FolderViewScreen() {
+export default function AllVideosScreen() {
     const navigation = useNavigation<any>();
-    const route = useRoute<any>();
-    const { folder } = route.params as { folder: Folder };
     const insets = useSafeAreaInsets();
     const { showAlert } = useAlert();
 
     const [items, setItems] = useState<GalleryItem[]>([]);
+    const [folders, setFolders] = useState<Folder[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+
     const [selectMode, setSelectMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+    const [menuVisible, setMenuVisible] = useState(false);
+    const [moveFolderVisible, setMoveFolderVisible] = useState(false);
+
     const getMobileUrl = (rawUrl: string) => rawUrl.replace('http://localhost:3000', API_URL);
 
-    const fetchFolderItems = useCallback(async () => {
+    const fetchData = useCallback(async (isRefresh = false) => {
+        if (isRefresh) setRefreshing(true);
         try {
-            const res = await api.get(`/api/gallery?limit=100&folder_name=${encodeURIComponent(folder.name)}`);
-            if (res.data.success) {
-                const processedItems = res.data.data.items.map((i: any) => ({
+            const [galleryRes, foldersRes] = await Promise.all([
+                api.get('/api/gallery?limit=100&type=video'),
+                api.get('/api/folders')
+            ]);
+
+            if (galleryRes.data.success) {
+                const processedItems = galleryRes.data.data.items.map((i: any) => ({
                     ...i,
                     raw_url: getMobileUrl(i.raw_url)
                 }));
                 setItems(processedItems);
             }
+            if (foldersRes.data.success) setFolders(foldersRes.data.data.folders);
         } catch (err) {
-            console.error('Fetch folder items error', err);
+            console.error('Fetch error:', err);
         } finally {
             setLoading(false);
             setRefreshing(false);
         }
-    }, [folder.name]);
+    }, []);
 
     useEffect(() => {
-        fetchFolderItems();
-    }, [fetchFolderItems]);
-
-    const onRefresh = () => {
-        setRefreshing(true);
-        fetchFolderItems();
-    };
+        const unsubscribe = navigation.addListener('focus', () => {
+            fetchData();
+        });
+        fetchData();
+        return unsubscribe;
+    }, [navigation, fetchData]);
 
     const toggleSelect = useCallback((id: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -132,40 +139,40 @@ export default function FolderViewScreen() {
         setSelectedIds(new Set());
     };
 
-    const handleRemoveFromFolder = async () => {
-        if (selectedIds.size === 0) return;
-        try {
-            await api.post('/api/files/bulk', { action: 'move', file_ids: Array.from(selectedIds), folder_name: null });
-            exitSelectMode();
-            fetchFolderItems();
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            showAlert('Done', 'Files moved back to gallery');
-        } catch (err: any) {
-            showAlert('Error', err.response?.data?.error || 'Failed');
-        }
-    };
-
     const handleBulkTrash = () => {
         if (selectedIds.size === 0) return;
         showAlert(
-            'Move to Trash', `Move ${selectedIds.size} file(s) to trash?`,
+            'Move to Trash',
+            `Move ${selectedIds.size} video(s) to trash?`,
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Trash', style: 'destructive',
+                    text: 'Move to Trash',
+                    style: 'destructive',
                     onPress: async () => {
                         try {
                             await api.post('/api/files/bulk', { action: 'trash', file_ids: Array.from(selectedIds) });
                             exitSelectMode();
-                            fetchFolderItems();
-                            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            fetchData();
                         } catch (err: any) {
-                            showAlert('Error', 'Failed to trash files');
+                            showAlert('Error', err.response?.data?.error || 'Failed to trash videos');
                         }
                     }
                 }
             ]
         );
+    };
+
+    const handleBulkMove = async (folderName: string) => {
+        try {
+            await api.post('/api/files/bulk', { action: 'move', file_ids: Array.from(selectedIds), folder_name: folderName });
+            setMoveFolderVisible(false);
+            exitSelectMode();
+            fetchData();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch (err: any) {
+            showAlert('Error', err.response?.data?.error || 'Failed to move videos');
+        }
     };
 
     if (loading && !refreshing && items.length === 0) {
@@ -179,16 +186,15 @@ export default function FolderViewScreen() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
-
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 {selectMode ? (
                     <View style={styles.selectHeader}>
                         <TouchableOpacity onPress={exitSelectMode} style={styles.iconBtn}>
-                            <Feather name="x" size={24} color="#1E293B" />
+                            <Feather name="x" size={22} color="#1E293B" />
                         </TouchableOpacity>
                         <Text style={styles.selectCount}>{selectedIds.size} Selected</Text>
                         <TouchableOpacity onPress={() => setSelectedIds(new Set(items.map(i => i.id)))}>
-                            <Text style={styles.selectAllText}>All</Text>
+                            <Text style={styles.selectAllText}>Select All</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
@@ -197,10 +203,12 @@ export default function FolderViewScreen() {
                             <Feather name="arrow-left" size={24} color="#1E293B" />
                         </TouchableOpacity>
                         <View style={styles.headerTitleContainer}>
-                            <Text style={styles.headerSubtitle}>FOLDER • {items.length} ITEMS</Text>
-                            <Text style={styles.headerTitle} numberOfLines={1}>{folder.name}</Text>
+                            <Text style={styles.headerSubtitle}>ALBUMS</Text>
+                            <Text style={styles.headerTitle} numberOfLines={1}>All Videos</Text>
                         </View>
-                        <View style={{ width: 40 }} />
+                        <TouchableOpacity onPress={() => { setMenuVisible(true); }} style={styles.iconBtn}>
+                            <Feather name="more-horizontal" size={24} color="#1E293B" />
+                        </TouchableOpacity>
                     </View>
                 )}
             </View>
@@ -208,26 +216,24 @@ export default function FolderViewScreen() {
             {items.length === 0 ? (
                 <View style={styles.emptyContainer}>
                     <View style={styles.emptyIconCircle}>
-                        <Feather name="folder-minus" size={32} color="#94A3B8" />
+                        <Feather name="video" size={32} color="#94A3B8" />
                     </View>
-                    <Text style={styles.emptyTitle}>Folder is Empty</Text>
-                    <Text style={styles.emptySubtitle}>Select photos from the gallery and move them here.</Text>
+                    <Text style={styles.emptyTitle}>No videos available</Text>
+                    <Text style={styles.emptySubtitle}>Upload videos to see them here.</Text>
                 </View>
             ) : (
                 <FlatList
                     data={items}
                     keyExtractor={item => item.id}
                     numColumns={COLUMN_COUNT}
-                    columnWrapperStyle={styles.row}
-                    contentContainerStyle={{ paddingBottom: 120 }}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1A1A1A" />}
+                    contentContainerStyle={{ paddingBottom: 120, paddingTop: 16 }}
                     initialNumToRender={15}
                     maxToRenderPerBatch={10}
                     windowSize={5}
                     removeClippedSubviews={Platform.OS === 'android'}
                     getItemLayout={(data, index) => ({ length: ITEM_SIZE, offset: ITEM_SIZE * Math.floor(index / COLUMN_COUNT), index })}
                     renderItem={({ item, index }) => (
-                        <FolderGridItem
+                        <GalleryGridItem
                             item={item} index={index}
                             isSelected={selectedIds.has(item.id)}
                             selectMode={selectMode}
@@ -239,23 +245,60 @@ export default function FolderViewScreen() {
                 />
             )}
 
-            {/* Floating Action Bar */}
             {selectMode && selectedIds.size > 0 && (
                 <BlurView intensity={80} tint="light" style={[styles.actionBar, { paddingBottom: insets.bottom || 16 }]}>
-                    <TouchableOpacity style={styles.actionBtn} onPress={handleRemoveFromFolder}>
-                        <View style={[styles.actionIconBg, { backgroundColor: '#F1F5F9' }]}>
-                            <Feather name="corner-up-left" size={20} color="#334155" />
-                        </View>
-                        <Text style={[styles.actionText, { color: '#334155' }]}>Remove</Text>
-                    </TouchableOpacity>
                     <TouchableOpacity style={styles.actionBtn} onPress={handleBulkTrash}>
                         <View style={[styles.actionIconBg, { backgroundColor: '#FEE2E2' }]}>
                             <Feather name="trash-2" size={20} color="#DC2626" />
                         </View>
                         <Text style={[styles.actionText, { color: '#DC2626' }]}>Trash</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity style={styles.actionBtn} onPress={() => setMoveFolderVisible(true)}>
+                        <View style={[styles.actionIconBg, { backgroundColor: '#E2E8F0' }]}>
+                            <Feather name="folder-plus" size={20} color="#0A0A0A" />
+                        </View>
+                        <Text style={[styles.actionText, { color: '#0A0A0A' }]}>Move</Text>
+                    </TouchableOpacity>
                 </BlurView>
             )}
+
+            <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
+                <TouchableOpacity style={styles.menuOverlay} activeOpacity={1} onPress={() => setMenuVisible(false)}>
+                    <View style={styles.menuContainer}>
+                        <Text style={styles.menuTitle}>Options</Text>
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setMenuVisible(false); setSelectMode(true); }}>
+                            <Feather name="check-circle" size={18} color="#1E293B" />
+                            <Text style={styles.menuItemText}>Select Multiple</Text>
+                        </TouchableOpacity>
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+
+            <Modal visible={moveFolderVisible} transparent animationType="fade" onRequestClose={() => setMoveFolderVisible(false)}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Move to...</Text>
+                        {folders.length === 0 ? (
+                            <Text style={styles.noFolderText}>No folders available. Create one in Albums tab.</Text>
+                        ) : (
+                            <FlatList
+                                data={folders}
+                                keyExtractor={item => item.id}
+                                style={{ maxHeight: 250, marginVertical: 10 }}
+                                renderItem={({ item }) => (
+                                    <TouchableOpacity style={styles.folderOption} onPress={() => handleBulkMove(item.name)}>
+                                        <Feather name="folder" size={20} color="#1A1A1A" />
+                                        <Text style={styles.folderOptionText}>{item.name}</Text>
+                                    </TouchableOpacity>
+                                )}
+                            />
+                        )}
+                        <TouchableOpacity style={styles.modalBtnCancel} onPress={() => setMoveFolderVisible(false)}>
+                            <Text style={styles.modalBtnCancelText}>Close</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -265,13 +308,16 @@ const styles = StyleSheet.create({
     centered: { justifyContent: 'center', alignItems: 'center' },
     row: { paddingHorizontal: ITEM_SPACING / 2 },
 
-    header: { paddingHorizontal: 20, paddingBottom: 16, backgroundColor: '#FAFAFA' },
+    header: {
+        paddingHorizontal: 20, paddingBottom: 16,
+        backgroundColor: '#FAFAFA',
+    },
     normalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     headerTitleContainer: { flex: 1, alignItems: 'center', paddingHorizontal: 16 },
     headerSubtitle: { fontSize: 11, fontWeight: '700', color: '#94A3B8', letterSpacing: 1, marginBottom: 2 },
     headerTitle: { fontSize: 20, fontWeight: '800', color: '#0F172A', textAlign: 'center' },
+    iconBtn: { padding: 8, backgroundColor: '#F1F5F9', borderRadius: 20 },
 
-    iconBtn: { width: 40, height: 40, backgroundColor: '#F1F5F9', borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
     selectHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', height: 40 },
     selectCount: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
     selectAllText: { fontSize: 15, fontWeight: '600', color: '#1A1A1A' },
@@ -281,9 +327,14 @@ const styles = StyleSheet.create({
     imageSelected: { transform: [{ scale: 0.9 }], borderRadius: 12 },
 
     videoOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
+
     selectOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-start', alignItems: 'flex-end', padding: 8 },
     selectedOverlay: { backgroundColor: 'rgba(26, 26, 26, 0.15)', borderRadius: 8 },
-    checkbox: { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: '#FFF', backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' },
+    checkbox: {
+        width: 24, height: 24, borderRadius: 12, borderWidth: 1.5,
+        borderColor: '#FFF', backgroundColor: 'rgba(0,0,0,0.2)',
+        justifyContent: 'center', alignItems: 'center'
+    },
     checkboxSelected: { backgroundColor: '#1A1A1A', borderColor: '#1A1A1A', transform: [{ scale: 1.1 }] },
 
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
@@ -297,6 +348,31 @@ const styles = StyleSheet.create({
         paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)',
     },
     actionBtn: { alignItems: 'center', gap: 8 },
-    actionIconBg: { width: 48, height: 48, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
-    actionText: { fontSize: 14, fontWeight: '600' },
+    actionIconBg: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+    actionText: { fontSize: 13, fontWeight: '600' },
+
+    menuOverlay: { flex: 1, backgroundColor: 'transparent', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: 60, paddingRight: 20 },
+    menuContainer: {
+        width: 220, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 8,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1, shadowRadius: 16, elevation: 10,
+        borderWidth: 1, borderColor: '#F1F5F9'
+    },
+    menuTitle: { fontSize: 13, fontWeight: '700', color: '#94A3B8', textTransform: 'uppercase', paddingHorizontal: 16, paddingVertical: 12 },
+    menuItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, paddingHorizontal: 16, borderRadius: 12 },
+    menuItemText: { fontSize: 16, fontWeight: '500', color: '#1E293B' },
+
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.6)', justifyContent: 'flex-end' },
+    modalContent: {
+        backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        padding: 24, paddingBottom: 40,
+        shadowColor: '#000', shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.1, shadowRadius: 24, elevation: 16,
+    },
+    modalTitle: { fontSize: 22, fontWeight: '800', color: '#0F172A', marginBottom: 8 },
+    noFolderText: { fontSize: 15, color: '#94A3B8', textAlign: 'center', paddingVertical: 24 },
+    folderOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+    folderOptionText: { fontSize: 17, fontWeight: '500', color: '#1E293B' },
+    modalBtnCancel: { marginTop: 16, paddingVertical: 16, borderRadius: 16, backgroundColor: '#F1F5F9', alignItems: 'center' },
+    modalBtnCancelText: { fontSize: 16, fontWeight: '600', color: '#475569' },
 });

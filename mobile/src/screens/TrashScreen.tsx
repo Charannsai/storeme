@@ -11,6 +11,7 @@ import { GalleryItem } from '../types';
 import api, { API_URL } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAlert } from '../components/CustomAlertProvider';
 
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 3;
@@ -61,6 +62,7 @@ const TrashGridItem = React.memo(({ item, index, isSelected, selectMode, onSelec
 export default function TrashScreen() {
     const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
+    const { showAlert } = useAlert();
 
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -121,7 +123,7 @@ export default function TrashScreen() {
     const handleRestore = () => {
         const ids = selectedIds.size > 0 ? Array.from(selectedIds) : items.map(i => i.id);
         const count = ids.length;
-        Alert.alert(
+        showAlert(
             'Restore Files',
             `Restore ${count} file(s) back to gallery?`,
             [
@@ -134,9 +136,9 @@ export default function TrashScreen() {
                             exitSelectMode();
                             fetchTrash();
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            Alert.alert('Done', `${count} file(s) restored`);
+                            showAlert('Done', `${count} file(s) restored`);
                         } catch (err: any) {
-                            Alert.alert('Error', 'Failed to restore files');
+                            showAlert('Error', 'Failed to restore files');
                         }
                     }
                 }
@@ -149,7 +151,7 @@ export default function TrashScreen() {
         const isAll = ids.length === 0;
 
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Alert.alert(
+        showAlert(
             'Permanently Delete',
             isAll
                 ? 'This will permanently delete ALL files in trash. This cannot be undone!'
@@ -165,9 +167,9 @@ export default function TrashScreen() {
                             exitSelectMode();
                             fetchTrash();
                             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                            Alert.alert('Done', 'Files permanently deleted');
+                            showAlert('Done', 'Files permanently deleted');
                         } catch (err: any) {
-                            Alert.alert('Error', 'Failed to delete');
+                            showAlert('Error', 'Failed to delete');
                         }
                     }
                 }

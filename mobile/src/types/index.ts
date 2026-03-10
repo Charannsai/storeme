@@ -40,6 +40,7 @@ export type RootStackParamList = {
     FolderView: { folder: Folder };
     TrashBin: undefined;
     AllPhotos: undefined;
+    AllVideos: undefined;
     Settings: undefined;
 };
 

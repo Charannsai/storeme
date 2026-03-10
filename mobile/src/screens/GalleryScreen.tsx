@@ -5,9 +5,6 @@ import {
     StatusBar, TextInput, Platform, LayoutAnimation, UIManager
 } from 'react-native';
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -16,6 +13,7 @@ import { GalleryItem, Folder } from '../types';
 import api, { API_URL } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAlert } from '../components/CustomAlertProvider';
 
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 3;
@@ -70,6 +68,7 @@ const GalleryGridItem = React.memo(({ item, index, isSelected, selectMode, onSel
 export default function GalleryScreen() {
     const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
+    const { showAlert } = useAlert();
 
     const [items, setItems] = useState<GalleryItem[]>([]);
     const [folders, setFolders] = useState<Folder[]>([]);
@@ -202,7 +201,7 @@ export default function GalleryScreen() {
 
     const handleBulkTrash = () => {
         if (selectedIds.size === 0) return;
-        Alert.alert(
+        showAlert(
             'Move to Trash',
             `Move ${selectedIds.size} file(s) to trash?`,
             [
@@ -216,7 +215,7 @@ export default function GalleryScreen() {
                             exitSelectMode();
                             fetchData();
                         } catch (err: any) {
-                            Alert.alert('Error', err.response?.data?.error || 'Failed to trash files');
+                            showAlert('Error', err.response?.data?.error || 'Failed to trash files');
                         }
                     }
                 }
@@ -232,7 +231,7 @@ export default function GalleryScreen() {
             fetchData();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (err: any) {
-            Alert.alert('Error', err.response?.data?.error || 'Failed to move files');
+            showAlert('Error', err.response?.data?.error || 'Failed to move files');
         }
     };
 

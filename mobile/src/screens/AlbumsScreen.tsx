@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, TextInput, Modal, StatusBar, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, TextInput, Modal, StatusBar, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useNavigation } from '@react-navigation/native';
@@ -7,26 +7,30 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api, { API_URL } from '../services/api';
 import { Folder } from '../types';
 import { Image } from 'expo-image';
+import { useAlert } from '../components/CustomAlertProvider';
 
 const { width } = Dimensions.get('window');
 
 export default function AlbumsScreen() {
     const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
+    const { showAlert } = useAlert();
 
     const [folders, setFolders] = useState<Folder[]>([]);
     const [loading, setLoading] = useState(true);
     const [createFolderVisible, setCreateFolderVisible] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [allPhotosCover, setAllPhotosCover] = useState<string | null>(null);
+    const [allVideosCover, setAllVideosCover] = useState<string | null>(null);
 
     const getMobileUrl = (rawUrl: string) => rawUrl.replace('http://localhost:3000', API_URL);
 
     const fetchFolders = useCallback(async () => {
         try {
-            const [foldersRes, allPhotosRes] = await Promise.all([
+            const [foldersRes, allPhotosRes, allVideosRes] = await Promise.all([
                 api.get('/api/folders'),
-                api.get('/api/gallery?limit=1')
+                api.get('/api/gallery?limit=1'),
+                api.get('/api/gallery?limit=1&type=video')
             ]);
 
             if (foldersRes.data.success) {
@@ -34,6 +38,9 @@ export default function AlbumsScreen() {
             }
             if (allPhotosRes.data.success && allPhotosRes.data.data.items.length > 0) {
                 setAllPhotosCover(getMobileUrl(allPhotosRes.data.data.items[0].raw_url));
+            }
+            if (allVideosRes.data.success && allVideosRes.data.data.items.length > 0) {
+                setAllVideosCover(getMobileUrl(allVideosRes.data.data.items[0].raw_url));
             }
         } catch (err) {
             console.error('Fetch folders error', err);
@@ -59,13 +66,13 @@ export default function AlbumsScreen() {
             fetchFolders();
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (err: any) {
-            Alert.alert('Error', err.response?.data?.error || 'Failed to create folder');
+            showAlert('Error', err.response?.data?.error || 'Failed to create folder');
         }
     };
 
     const handleDeleteFolder = (folder: Folder) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        Alert.alert('Delete Folder', `Delete "${folder.name}"? Files inside will be moved back to All Photos.`, [
+        showAlert('Delete Folder', `Delete "${folder.name}"? Files inside will be moved back to All Photos.`, [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Delete', style: 'destructive',
@@ -75,7 +82,7 @@ export default function AlbumsScreen() {
                         fetchFolders();
                         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     } catch (err: any) {
-                        Alert.alert('Error', 'Failed to delete folder');
+                        showAlert('Error', 'Failed to delete folder');
                     }
                 }
             }
@@ -94,6 +101,25 @@ export default function AlbumsScreen() {
                         </View>
                     )}
                     <Text style={styles.utilityRowTitle}>All Photos</Text>
+                    <Feather name="chevron-right" size={20} color="#94A3B8" />
+                </TouchableOpacity>
+
+                <View style={styles.divider} />
+
+                <TouchableOpacity style={styles.utilityRow} onPress={() => navigation.navigate('AllVideos')}>
+                    {allVideosCover ? (
+                        <View style={{ position: 'relative' }}>
+                            <Image source={{ uri: allVideosCover }} style={styles.utilityCoverImage} contentFit="cover" transition={200} cachePolicy="memory-disk" />
+                            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
+                                <Feather name="play" size={12} color="#FFF" />
+                            </View>
+                        </View>
+                    ) : (
+                        <View style={styles.utilityIconBg}>
+                            <Feather name="video" size={20} color="#1A1A1A" />
+                        </View>
+                    )}
+                    <Text style={styles.utilityRowTitle}>All Videos</Text>
                     <Feather name="chevron-right" size={20} color="#94A3B8" />
                 </TouchableOpacity>
 

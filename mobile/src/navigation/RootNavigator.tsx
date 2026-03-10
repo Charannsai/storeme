@@ -14,6 +14,7 @@ import FolderViewScreen from '../screens/FolderViewScreen';
 import TrashScreen from '../screens/TrashScreen';
 import AlbumsScreen from '../screens/AlbumsScreen';
 import AllPhotosScreen from '../screens/AllPhotosScreen';
+import AllVideosScreen from '../screens/AllVideosScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -63,16 +64,16 @@ export default function RootNavigator() {
                     name="ImageViewer"
                     component={ImageViewerScreen}
                     options={{
-                        animation: 'slide_from_bottom',
+                        animation: 'fade',
                         presentation: 'transparentModal',
-                        contentStyle: { backgroundColor: '#000' },
+                        contentStyle: { backgroundColor: 'transparent' },
                     }}
                 />
                 <Stack.Screen
                     name="ImageEditor"
                     component={ImageEditorScreen}
                     options={{
-                        animation: 'slide_from_bottom',
+                        animation: 'fade',
                         contentStyle: { backgroundColor: '#0F0F0F' },
                     }}
                 />
@@ -87,6 +88,10 @@ export default function RootNavigator() {
                 <Stack.Screen
                     name="AllPhotos"
                     component={AllPhotosScreen}
+                />
+                <Stack.Screen
+                    name="AllVideos"
+                    component={AllVideosScreen}
                 />
                 <Stack.Screen
                     name="Settings"

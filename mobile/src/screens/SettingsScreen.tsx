@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, StatusBar, Switch, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, StatusBar, Switch, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import * as Haptics from 'expo-haptics';
@@ -12,11 +12,15 @@ import * as Haptics from 'expo-haptics';
 import { RootStackParamList, UploadQueueItem } from '../types';
 import api from '../services/api';
 import { addToQueue, getQueue } from '../services/uploadQueue';
+import { useAlert } from '../components/CustomAlertProvider';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>; };
 
-export default function SettingsScreen({ navigation }: Props) {
+export default function SettingsScreen({ navigation: propNavigation }: Props) {
+    const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
+    const isFocused = useIsFocused();
+    const { showAlert } = useAlert();
 
     // Settings state
     const [stats, setStats] = useState<any>(null);
@@ -83,18 +87,18 @@ export default function SettingsScreen({ navigation }: Props) {
                 let permissionInfo;
                 try { permissionInfo = await MediaLibrary.requestPermissionsAsync(false, ['photo', 'video']); }
                 catch (e: any) {
-                    if (e.message?.includes('Expo Go')) { Alert.alert('Expo Go Limitation', 'Expo Go cannot access background media. Use a dev build or select manually.'); return; }
+                    if (e.message?.includes('Expo Go')) { showAlert('Expo Go Limitation', 'Expo Go cannot access background media. Use a dev build or select manually.'); return; }
                     throw e;
                 }
                 if (permissionInfo && permissionInfo.status !== 'granted' && !permissionInfo.granted) {
-                    Alert.alert('Permission needed', `We need access to your photos. Status: ${permissionInfo.status}`); return;
+                    showAlert('Permission needed', `We need access to your photos. Status: ${permissionInfo.status}`); return;
                 }
             }
             setAutoSync(enabled);
             await AsyncStorage.setItem('auto_sync_enabled', enabled ? 'true' : 'false');
             if (enabled) runAutoSync();
         } catch (e: any) {
-            Alert.alert('Error', `Failed to toggle sync: ${e.message || e}`);
+            showAlert('Error', `Failed to toggle sync: ${e.message || e}`);
         }
     };
 
@@ -137,7 +141,7 @@ export default function SettingsScreen({ navigation }: Props) {
     };
 
     const handleLogout = async () => {
-        Alert.alert('Log Out', 'Are you sure you want to log out?', [
+        showAlert('Log Out', 'Are you sure you want to log out?', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Log Out', style: 'destructive',
