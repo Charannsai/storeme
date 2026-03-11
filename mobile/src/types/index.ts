@@ -28,6 +28,7 @@ export interface UploadQueueItem {
     size: number;
     status: 'pending' | 'uploading' | 'failed' | 'completed';
     error?: string;
+    album?: string;
     created_at: number;
 }
 

@@ -91,6 +91,7 @@ export async function processQueue() {
                 size: item.size,
                 content: base64,
                 hash: `${timestamp}_${hashString}`,
+                album: item.album,
             });
         } catch (err: any) {
             console.error(`Error reading file ${item.id}:`, err);

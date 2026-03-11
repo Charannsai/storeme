@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, StatusBar, Switch, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, StatusBar, Switch, Animated, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
@@ -13,6 +13,7 @@ import { RootStackParamList, UploadQueueItem } from '../types';
 import api from '../services/api';
 import { addToQueue, getQueue } from '../services/uploadQueue';
 import { useAlert } from '../components/CustomAlertProvider';
+import { Image } from 'expo-image';
 
 type Props = { navigation: NativeStackNavigationProp<RootStackParamList, 'Settings'>; };
 
@@ -32,6 +33,8 @@ export default function SettingsScreen({ navigation: propNavigation }: Props) {
     const [loadingUpload, setLoadingUpload] = useState(false);
     const [autoSync, setAutoSync] = useState(false);
     const [syncingLibrary, setSyncingLibrary] = useState(false);
+    const [fullSyncing, setFullSyncing] = useState(false);
+    const [syncStatsState, setSyncStatsState] = useState({ totalAssets: 0, scannedAssets: 0, currentAlbum: '' });
     const spinValue = useRef(new Animated.Value(0)).current;
 
     const fetchStats = useCallback(async () => {
@@ -107,20 +110,111 @@ export default function SettingsScreen({ navigation: propNavigation }: Props) {
         setSyncingLibrary(true);
         try {
             const lastSyncedAt = await AsyncStorage.getItem('last_sync_timestamp') || '0';
-            const { assets } = await MediaLibrary.getAssetsAsync({ first: 50, sortBy: [MediaLibrary.SortBy.creationTime], mediaType: [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video] });
             const timestampCutoff = parseInt(lastSyncedAt);
             let syncedCount = 0;
-            for (const asset of assets) {
-                if (asset.creationTime > timestampCutoff) {
-                    const type = asset.mediaType === 'video' ? 'video' : 'image';
-                    await addToQueue({ uri: asset.uri, filename: asset.filename || `auto_${Date.now()}.${type === 'video' ? 'mp4' : 'jpg'}`, type, size: 0 });
-                    syncedCount++;
+            let hasNextPage = true;
+            let endCursor: string | undefined = undefined;
+            let newestTimestamp = timestampCutoff;
+
+            while (hasNextPage) {
+                const { assets, hasNextPage: hasNext, endCursor: nextCursor } = await MediaLibrary.getAssetsAsync({
+                    first: 100, // Process in chunks of 100
+                    after: endCursor,
+                    sortBy: [MediaLibrary.SortBy.creationTime],
+                    mediaType: [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video]
+                });
+
+                let reachedOldFiles = false;
+
+                for (const asset of assets) {
+                    if (asset.creationTime > timestampCutoff) {
+                        const type = asset.mediaType === 'video' ? 'video' : 'image';
+                        await addToQueue({ uri: asset.uri, filename: asset.filename || `auto_${Date.now()}.${type === 'video' ? 'mp4' : 'jpg'}`, type, size: 0 });
+                        syncedCount++;
+                        
+                        // Keep track of the very newest timestamp we've seen across all pages
+                        if (asset.creationTime > newestTimestamp) {
+                            newestTimestamp = asset.creationTime;
+                        }
+                    } else {
+                        // Because the list is sorted by creation time (newest first),
+                        // once we hit a file older than our cutoff, we know ALL remaining files are also older.
+                        reachedOldFiles = true;
+                        break;
+                    }
+                }
+
+                if (reachedOldFiles) {
+                    break; // Stop fetching more pages if we've caught up
+                }
+
+                hasNextPage = hasNext;
+                endCursor = nextCursor;
+            }
+
+            if (newestTimestamp > timestampCutoff) {
+                await AsyncStorage.setItem('last_sync_timestamp', newestTimestamp.toString());
+            }
+
+            if (syncedCount > 0) refreshQueue();
+        } catch (err) {
+            console.warn('Auto sync error:', err);
+        } finally {
+            setSyncingLibrary(false);
+        }
+    };
+
+    const runFullDeviceSync = async () => {
+        if (fullSyncing) return;
+        setFullSyncing(true);
+        try {
+            const { status } = await MediaLibrary.requestPermissionsAsync();
+            if (status !== 'granted') throw new Error('Permission denied');
+
+            const albums = await MediaLibrary.getAlbumsAsync();
+            let totalAssets = 0;
+            for (const album of albums) {
+                totalAssets += album.assetCount;
+            }
+            setSyncStatsState({ totalAssets, scannedAssets: 0, currentAlbum: 'Initializing...' });
+
+            let scanned = 0;
+            for (const album of albums) {
+                setSyncStatsState(prev => ({ ...prev, currentAlbum: album.title }));
+                let hasNextPage = true;
+                let endCursor: string | undefined = undefined;
+
+                while (hasNextPage) {
+                    const { assets, hasNextPage: hasNext, endCursor: nextCursor } = await MediaLibrary.getAssetsAsync({
+                        album: album.id,
+                        first: 100,
+                        after: endCursor,
+                        mediaType: [MediaLibrary.MediaType.photo, MediaLibrary.MediaType.video]
+                    });
+
+                    for (const asset of assets) {
+                        const type = asset.mediaType === 'video' ? 'video' : 'image';
+                        await addToQueue({ uri: asset.uri, filename: asset.filename || `auto_${Date.now()}.${type === 'video' ? 'mp4' : 'jpg'}`, type, size: 0, album: album.title });
+                        scanned++;
+                        
+                        // Update progress bar UI smoothly
+                        if (scanned % 10 === 0) {
+                            setSyncStatsState(prev => ({ ...prev, scannedAssets: scanned }));
+                        }
+                    }
+                    setSyncStatsState(prev => ({ ...prev, scannedAssets: scanned }));
+                    hasNextPage = hasNext;
+                    endCursor = nextCursor;
                 }
             }
-            if (assets.length > 0) await AsyncStorage.setItem('last_sync_timestamp', assets[0].creationTime.toString());
-            if (syncedCount > 0) refreshQueue();
-        } catch (err) { }
-        finally { setSyncingLibrary(false); }
+            await refreshQueue();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            showAlert('Success', `Successfully queued ${scanned} items from ${albums.length} folders!`);
+        } catch(err: any) {
+            showAlert('Error', `Full sync failed: ${err.message || err}`);
+        } finally {
+            setFullSyncing(false);
+        }
     };
 
     const pickMedia = async () => {
@@ -211,6 +305,13 @@ export default function SettingsScreen({ navigation: propNavigation }: Props) {
 
                         <View style={styles.divider} />
 
+                        <TouchableOpacity style={[styles.manualUploadBtn, {backgroundColor: '#2563EB', borderColor: '#2563EB'}]} onPress={runFullDeviceSync} disabled={fullSyncing} activeOpacity={0.7}>
+                            <Feather name="layers" size={20} color="#FFFFFF" style={{ marginRight: 10 }} />
+                            <Text style={[styles.manualUploadText, {color: '#FFFFFF'}]}>Backup Entire Device Files</Text>
+                        </TouchableOpacity>
+
+                        <View style={styles.divider} />
+
                         <TouchableOpacity style={styles.manualUploadBtn} onPress={pickMedia} disabled={loadingUpload} activeOpacity={0.7}>
                             {loadingUpload ? <ActivityIndicator color="#1A1A1A" /> : <Feather name="upload-cloud" size={20} color="#1A1A1A" style={{ marginRight: 10 }} />}
                             <Text style={styles.manualUploadText}>Select files manually</Text>
@@ -277,6 +378,22 @@ export default function SettingsScreen({ navigation: propNavigation }: Props) {
                 </View>
 
             </ScrollView>
+
+            {/* FULL SYNC MODAL */}
+            <Modal visible={fullSyncing} transparent animationType="fade">
+                <View style={styles.modalBg}>
+                    <View style={styles.modalCard}>
+                        <ActivityIndicator size="large" color="#1A1A1A" style={{ marginBottom: 20 }} />
+                        <Text style={styles.modalTitle}>Scanning Entire Device</Text>
+                        <Text style={styles.modalSubtitle}>Please do not close this app while scanning.</Text>
+                        
+                        <View style={styles.modalProgressBox}>
+                            <Text style={styles.modalAlbum}>Folder: <Text style={{fontWeight: '600'}}>{syncStatsState.currentAlbum}</Text></Text>
+                            <Text style={styles.modalProgress}>{syncStatsState.scannedAssets} / {syncStatsState.totalAssets} files queued</Text>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -332,4 +449,12 @@ const styles = StyleSheet.create({
     statIconBg: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
     statValue: { fontSize: 18, fontWeight: '700', marginBottom: 4, color: '#1E293B' },
     statLabel: { fontSize: 12, color: '#64748B', fontWeight: '500' },
+    
+    modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+    modalCard: { width: '85%', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, alignItems: 'center', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 10 },
+    modalTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', marginBottom: 8 },
+    modalSubtitle: { fontSize: 14, color: '#64748B', textAlign: 'center', marginBottom: 20 },
+    modalProgressBox: { width: '100%', backgroundColor: '#F8FAFC', padding: 16, borderRadius: 12, alignItems: 'center' },
+    modalAlbum: { fontSize: 14, color: '#334155', marginBottom: 4 },
+    modalProgress: { fontSize: 16, fontWeight: '600', color: '#2563EB' },
 });

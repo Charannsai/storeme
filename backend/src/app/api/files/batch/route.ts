@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         const githubPayload = [];
 
         for (const file of files) {
-            const { filename, file_type, size, content, hash } = file;
+            const { filename, file_type, size, content, hash, album } = file;
 
             if (!filename || !file_type || !content || !hash) {
                 continue; // skip invalid objects
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
             if (existing) continue;
 
             const folder = file_type === 'video' ? 'videos' : 'images';
-            const githubPath = `gallery/${folder}/${year}/${month}/${filename}`;
+            const githubPath = album ? `gallery/albums/${album}/${filename}` : `gallery/${folder}/${year}/${month}/${filename}`;
 
             // Insert into db as uploading
             const { data: mediaFile, error: insertError } = await supabaseAdmin
