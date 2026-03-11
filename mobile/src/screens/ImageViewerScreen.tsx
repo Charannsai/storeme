@@ -240,7 +240,6 @@ export default function ImageViewerScreen() {
                     style={{ width: '100%', height: '100%', position: 'absolute' }}
                     contentFit="contain"
                     nativeControls={true}
-                    allowsFullscreen
                     useExoShutter={false}
                 />
                 

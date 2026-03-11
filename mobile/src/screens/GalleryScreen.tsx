@@ -14,57 +14,12 @@ import api, { API_URL } from '../services/api';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAlert } from '../components/CustomAlertProvider';
+import PinchableGalleryList from '../components/PinchableGalleryList';
 
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 3;
 const ITEM_SPACING = 2;
 const ITEM_SIZE = (width - ITEM_SPACING * (COLUMN_COUNT - 1)) / COLUMN_COUNT;
-
-// Memoized item to prevent re-rendering all images when one is selected
-const GalleryGridItem = React.memo(({ item, index, isSelected, selectMode, onSelect, onLongPress, onPressItem }: any) => {
-    return (
-        <TouchableOpacity
-            style={styles.itemContainer}
-            activeOpacity={0.85}
-            onPress={() => {
-                if (selectMode) {
-                    onSelect(item.id);
-                } else {
-                    onPressItem(index);
-                }
-            }}
-            onLongPress={() => onLongPress(item.id)}
-        >
-            <Image
-                source={{ uri: item.raw_url }}
-                style={[
-                    styles.image,
-                    isSelected ? styles.imageSelected : null
-                ]}
-                contentFit="cover"
-                transition={200}
-                cachePolicy="memory-disk"
-            />
-            {item.file_type === 'video' && (
-                <View style={styles.videoOverlay}>
-                    <Feather name="play-circle" size={24} color="rgba(255,255,255,0.9)" />
-                </View>
-            )}
-            {selectMode && (
-                <View style={[styles.selectOverlay, isSelected && styles.selectedOverlay]}>
-                    <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                        {isSelected && <Feather name="check" size={14} color="#FFF" />}
-                    </View>
-                </View>
-            )}
-        </TouchableOpacity>
-    );
-}, (prev, next) => {
-    return prev.isSelected === next.isSelected &&
-        prev.selectMode === next.selectMode &&
-        prev.item.id === next.item.id;
-});
-
 export default function GalleryScreen() {
     const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
@@ -80,6 +35,8 @@ export default function GalleryScreen() {
 
     const [menuVisible, setMenuVisible] = useState(false);
     const [moveFolderVisible, setMoveFolderVisible] = useState(false);
+
+
 
     const getMobileUrl = (rawUrl: string) => rawUrl.replace('http://localhost:3000', API_URL);
 
@@ -119,56 +76,7 @@ export default function GalleryScreen() {
 
     const onRefresh = () => fetchData(true);
 
-    const groupedData = useMemo(() => {
-        const rows: any[] = [];
-        let currentGroup = '';
-        let currentChunk: GalleryItem[] = [];
 
-        const flushChunk = () => {
-            if (currentChunk.length > 0) {
-                const rowItems = [...currentChunk];
-                rows.push({ type: 'row', items: rowItems, id: rowItems[0].id + '_row' });
-                currentChunk = [];
-            }
-        };
-
-        items.forEach((item) => {
-            const dateStr = item.uploaded_at;
-            let groupName = 'Earlier';
-            if (dateStr) {
-                const d = new Date(dateStr);
-                const now = new Date();
-                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                const yesterday = new Date(today);
-                yesterday.setDate(yesterday.getDate() - 1);
-
-                const checkDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-                if (checkDate.getTime() === today.getTime()) groupName = 'Today';
-                else if (checkDate.getTime() === yesterday.getTime()) groupName = 'Yesterday';
-                else {
-                    groupName = d.toLocaleDateString(undefined, {
-                        month: 'long',
-                        day: 'numeric',
-                        year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-                    });
-                }
-            }
-
-            if (groupName !== currentGroup) {
-                flushChunk();
-                rows.push({ type: 'header', title: groupName, id: 'header_' + groupName });
-                currentGroup = groupName;
-            }
-
-            currentChunk.push(item);
-            if (currentChunk.length === COLUMN_COUNT) {
-                flushChunk();
-            }
-        });
-        flushChunk();
-        return rows;
-    }, [items]);
 
     const toggleSelect = useCallback((id: string) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -235,32 +143,7 @@ export default function GalleryScreen() {
         }
     };
 
-    // header block moved inline
-    const renderRowItem = ({ item }: any) => {
-        if (item.type === 'header') {
-            return <Text style={styles.dateHeader}>{item.title}</Text>;
-        }
 
-        return (
-            <View style={styles.gridRow}>
-                {item.items.map((galleryItem: GalleryItem) => {
-                    const originalIndex = items.findIndex((i) => i.id === galleryItem.id);
-                    return (
-                        <GalleryGridItem
-                            key={galleryItem.id}
-                            item={galleryItem}
-                            index={originalIndex}
-                            isSelected={selectedIds.has(galleryItem.id)}
-                            selectMode={selectMode}
-                            onSelect={toggleSelect}
-                            onLongPress={onLongPress}
-                            onPressItem={onPressItem}
-                        />
-                    );
-                })}
-            </View>
-        );
-    };
 
     if (loading && !refreshing && items.length === 0) {
         return (
@@ -303,17 +186,16 @@ export default function GalleryScreen() {
                     <Text style={styles.emptySubtitle}>Upload photos from Settings to get started.</Text>
                 </View>
             ) : (
-                <FlatList
-                    data={groupedData}
-                    keyExtractor={item => item.id}
-                    numColumns={1}
-                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#1A1A1A" />}
-                    contentContainerStyle={{ paddingBottom: 120, paddingTop: 8 }}
-                    initialNumToRender={10}
-                    maxToRenderPerBatch={10}
-                    windowSize={5}
-                    removeClippedSubviews={Platform.OS === 'android'}
-                    renderItem={renderRowItem}
+                <PinchableGalleryList
+                    items={items}
+                    selectMode={selectMode}
+                    selectedIds={selectedIds}
+                    toggleSelect={toggleSelect}
+                    onLongPress={onLongPress}
+                    onPressItem={onPressItem}
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    contentContainerStyle={{ paddingBottom: 150 }}
                 />
             )}
 
@@ -433,16 +315,16 @@ const styles = StyleSheet.create({
     trashBannerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     trashBannerCount: { fontSize: 15, fontWeight: '700', color: '#94A3B8' },
 
-    itemContainer: { width: ITEM_SIZE, height: ITEM_SIZE, padding: ITEM_SPACING / 2 },
-    image: { flex: 1, backgroundColor: '#E2E8F0', borderRadius: 8 },
-    imageSelected: { transform: [{ scale: 0.9 }], borderRadius: 12 },
+    itemContainer: { padding: 0 },
+    image: { flex: 1, backgroundColor: '#E2E8F0', borderRadius: 0 },
+    imageSelected: { transform: [{ scale: 0.85 }], borderRadius: 12 },
 
     videoOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
 
     selectOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'flex-start', alignItems: 'flex-end', padding: 8 },
-    selectedOverlay: { backgroundColor: 'rgba(26, 26, 26, 0.15)', borderRadius: 8 },
+    selectedOverlay: { backgroundColor: 'rgba(26, 26, 26, 0.15)' },
     checkbox: {
-        width: 24, height: 24, borderRadius: 12, borderWidth: 1.5,
+        width: 22, height: 22, borderRadius: 11, borderWidth: 1.5,
         borderColor: '#FFF', backgroundColor: 'rgba(0,0,0,0.2)',
         justifyContent: 'center', alignItems: 'center'
     },

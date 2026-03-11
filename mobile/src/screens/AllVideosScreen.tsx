@@ -15,53 +15,12 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAlert } from '../components/CustomAlertProvider';
 
+import PinchableGalleryList from '../components/PinchableGalleryList';
+
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 3;
 const ITEM_SPACING = 2;
 const ITEM_SIZE = (width - ITEM_SPACING * (COLUMN_COUNT - 1)) / COLUMN_COUNT;
-
-const GalleryGridItem = React.memo(({ item, index, isSelected, selectMode, onSelect, onLongPress, onPressItem }: any) => {
-    return (
-        <TouchableOpacity
-            style={styles.itemContainer}
-            activeOpacity={0.85}
-            onPress={() => {
-                if (selectMode) {
-                    onSelect(item.id);
-                } else {
-                    onPressItem(index);
-                }
-            }}
-            onLongPress={() => onLongPress(item.id)}
-        >
-            <Image
-                source={{ uri: item.raw_url }}
-                style={[
-                    styles.image,
-                    isSelected ? styles.imageSelected : null
-                ]}
-                contentFit="cover"
-                transition={200}
-                cachePolicy="memory-disk"
-            />
-            <View style={styles.videoOverlay}>
-                <Feather name="play-circle" size={24} color="rgba(255,255,255,0.9)" />
-            </View>
-            {selectMode && (
-                <View style={[styles.selectOverlay, isSelected && styles.selectedOverlay]}>
-                    <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                        {isSelected && <Feather name="check" size={14} color="#FFF" />}
-                    </View>
-                </View>
-            )}
-        </TouchableOpacity>
-    );
-}, (prev, next) => {
-    return prev.isSelected === next.isSelected &&
-        prev.selectMode === next.selectMode &&
-        prev.item.id === next.item.id;
-});
-
 export default function AllVideosScreen() {
     const navigation = useNavigation<any>();
     const insets = useSafeAreaInsets();
@@ -222,26 +181,14 @@ export default function AllVideosScreen() {
                     <Text style={styles.emptySubtitle}>Upload videos to see them here.</Text>
                 </View>
             ) : (
-                <FlatList
-                    data={items}
-                    keyExtractor={item => item.id}
-                    numColumns={COLUMN_COUNT}
+                <PinchableGalleryList
+                    items={items}
+                    selectMode={selectMode}
+                    selectedIds={selectedIds}
+                    toggleSelect={toggleSelect}
+                    onLongPress={onLongPress}
+                    onPressItem={onPressItem}
                     contentContainerStyle={{ paddingBottom: 120, paddingTop: 16 }}
-                    initialNumToRender={15}
-                    maxToRenderPerBatch={10}
-                    windowSize={5}
-                    removeClippedSubviews={Platform.OS === 'android'}
-                    getItemLayout={(data, index) => ({ length: ITEM_SIZE, offset: ITEM_SIZE * Math.floor(index / COLUMN_COUNT), index })}
-                    renderItem={({ item, index }) => (
-                        <GalleryGridItem
-                            item={item} index={index}
-                            isSelected={selectedIds.has(item.id)}
-                            selectMode={selectMode}
-                            onSelect={toggleSelect}
-                            onLongPress={onLongPress}
-                            onPressItem={onPressItem}
-                        />
-                    )}
                 />
             )}
 
