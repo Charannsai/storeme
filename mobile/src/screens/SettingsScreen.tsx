@@ -241,8 +241,14 @@ export default function SettingsScreen({ navigation: propNavigation }: Props) {
                 text: 'Log Out', style: 'destructive',
                 onPress: async () => {
                     try { await api.post('/api/auth/logout'); } catch { } finally {
-                        await AsyncStorage.clear();
-                        (navigation.getParent() as any)?.replace('Auth');
+                        // DO NOT run AsyncStorage.clear(). It deletes the pending upload queue.
+                        // Only delete user specific auth data cleanly.
+                        await AsyncStorage.removeItem('user');
+                        await AsyncStorage.removeItem('access_token');
+                        await AsyncStorage.removeItem('refresh_token');
+                        await AsyncStorage.removeItem('repo_setup_completed');
+                        // queue and auto_sync_enabled and sync timestamps stay intact for next login.
+                        navigation.navigate('Auth');
                     }
                 },
             },

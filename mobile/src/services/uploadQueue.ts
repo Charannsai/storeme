@@ -60,62 +60,64 @@ export async function updateQueueItemStatus(id: string, status: UploadQueueItem[
  */
 export async function processQueue() {
     const queue = await getQueue();
-    // Gather up to 5 pending items per batch sync
+    // Gather up to 15 pending items per batch sync (previously 5) safely using binary streams
     const pendingItems = queue
         .filter(i => i.status === 'pending' || i.status === 'failed')
-        .slice(0, 5);
+        .slice(0, 15);
 
     if (pendingItems.length === 0) return;
 
-    const payloadFields = [];
+    const formData = new FormData();
+    const metadataArray: any[] = [];
+    const payloadItems: typeof pendingItems = [];
 
     // Process files locally first
     for (const item of pendingItems) {
         await updateQueueItemStatus(item.id, 'uploading');
 
-        try {
-            // WE NOW UPLOAD THE ORIGINAL, FULL QUALITY RAW FILES BYPASSING IMAGE COMPRESSION
-            const base64 = await FileSystem.readAsStringAsync(item.uri, {
-                encoding: 'base64',
-            });
+        const timestamp = Date.now();
+        const hashString = Math.random().toString(36).substring(2, 8);
+        const ext = item.filename.split('.').pop() || 'jpg';
+        const newFilename = `${timestamp}_${hashString}.${ext}`;
 
-            const timestamp = Date.now();
-            const hashString = Math.random().toString(36).substring(2, 8);
-            const ext = item.filename.split('.').pop() || 'jpg';
-            const newFilename = `${timestamp}_${hashString}.${ext}`;
+        // Pass direct file streams to network instead of loading multiple 15MB base64 strings
+        formData.append('files', {
+            uri: item.uri,
+            name: newFilename,
+            type: item.type === 'video' ? 'video/mp4' : 'image/jpeg',
+        } as any);
 
-            payloadFields.push({
-                originalId: item.id,
-                filename: newFilename,
-                file_type: item.type,
-                size: item.size,
-                content: base64,
-                hash: `${timestamp}_${hashString}`,
-                album: item.album,
-            });
-        } catch (err: any) {
-            console.error(`Error reading file ${item.id}:`, err);
-            await updateQueueItemStatus(item.id, 'failed', err.message);
-        }
+        metadataArray.push({
+            originalId: item.id,
+            filename: newFilename,
+            file_type: item.type,
+            size: item.size,
+            hash: `${timestamp}_${hashString}`,
+            album: item.album,
+        });
+        payloadItems.push(item);
     }
 
-    if (payloadFields.length > 0) {
+    formData.append('metadata', JSON.stringify(metadataArray));
+
+    if (metadataArray.length > 0) {
         try {
-            // Upload the batch array directly to the new Next.js endpoint
-            await api.post('/api/files/batch', {
-                files: payloadFields,
+            // Upload the batch array directly using multiform binary
+            await api.post('/api/files/batch-binary', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                timeout: 120000, // 2 minutes config for heavy video files
             });
 
             // Mark completed & clean up
-            for (const file of payloadFields) {
+            for (const file of metadataArray) {
                 await updateQueueItemStatus(file.originalId, 'completed');
                 await removeFromQueue(file.originalId);
             }
         } catch (err: any) {
             // If the batch network request fails, mark all grouped items as failed natively
             let errorMsg = err?.response?.data?.error || err.message;
-            console.error('Batch upload error:', errorMsg);
-            for (const file of payloadFields) {
+            console.error('Batch Form upload error:', errorMsg);
+            for (const file of metadataArray) {
                 await updateQueueItemStatus(file.originalId, 'failed', errorMsg);
             }
         }
