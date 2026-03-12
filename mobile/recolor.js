@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-
+//changes should be done
 const walks = [
     'c:/Users/karth/OneDrive/Desktop/storeme/mobile/src/screens',
     'c:/Users/karth/OneDrive/Desktop/storeme/mobile/src/navigation',
