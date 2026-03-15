@@ -32,7 +32,7 @@ export interface UploadRequest {
   content: string; // Base64 encoded
   hash: string;
 }
-
+//gallery item interface
 export interface GalleryItem {
   id: string;
   filename: string;
