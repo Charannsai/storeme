@@ -24,7 +24,7 @@ export interface MediaFile {
   hash: string;
   status: 'pending' | 'uploading' | 'synced' | 'failed';
 }
-
+//upload request interface
 export interface UploadRequest {
   filename: string;
   file_type: 'image' | 'video';
