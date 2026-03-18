@@ -12,7 +12,7 @@ export interface GitHubAccount {
   repo_name: string;
   created_at: string;
 }
-
+//media file interface
 export interface MediaFile {
   id: string;
   user_id: string;
