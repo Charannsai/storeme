@@ -3,7 +3,7 @@ export interface User {
   email: string;
   created_at: string;
 }
-
+//github account interface
 export interface GitHubAccount {
   id: string;
   user_id: string;
