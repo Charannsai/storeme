@@ -49,7 +49,7 @@ export interface StorageInfo {
   image_count: number;
   video_count: number;
 }
-
+//api response interface
 export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
