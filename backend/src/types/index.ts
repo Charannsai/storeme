@@ -42,7 +42,7 @@ export interface GalleryItem {
   uploaded_at: string;
   raw_url: string;
 }
-
+//storage info interface
 export interface StorageInfo {
   repo_size: number;
   file_count: number;
